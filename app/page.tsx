@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { GameState, GameScreen, Team, GameSettingsType } from "@/types/game"
+import type { GameState, GameScreen, Team, GameSettingsType, SurpriseChoice } from "@/types/game"
+import type { Advertisement, GameQuestion } from "@/types/api"
 import MainMenu from "@/components/MainMenu"
 import TeamSelection from "@/components/TeamSelection"
 import GameSettingsComponent from "@/components/GameSettings"
@@ -10,9 +11,24 @@ import LadderProgress from "@/components/LadderProgress"
 import SurpriseEvent from "@/components/SurpriseEvent"
 import GameResults from "@/components/GameResults"
 import QuestionDisplay from "@/components/QuestionDisplay"
+import AdvertisementScreen from "@/components/AdvertisementScreen"
+import PublisherLogo from "@/components/PublisherLogo"
+import { apiService } from "@/lib/api-service"
+import { 
+  getLadderTarget, 
+  calculateStepsForTimedMode, 
+  calculateStepsForUntimedMode,
+  applySurpriseEffect,
+  determineWinner,
+  selectSurpriseChoice,
+  convertGameQuestionToQuestion
+} from "@/lib/game-utils"
 import { questions } from "@/data/questions"
 
 export default function GameApp() {
+  const [advertisements, setAdvertisements] = useState<Advertisement[]>([])
+  const [currentAdIndex, setCurrentAdIndex] = useState(0)
+  const [gameQuestions, setGameQuestions] = useState<GameQuestion[]>([])
   const [gameState, setGameState] = useState<GameState>({
     currentScreen: "main-menu",
     teams: [
@@ -25,19 +41,74 @@ export default function GameApp() {
       surpriseSystem: true,
     },
     currentQuestion: 1,
+    totalQuestions: 20,
     timeLeft: 30,
     selectedAnswer: null,
     answerResult: null,
-    correctAnswer: "B", // Doğru cevap: Ankara
+    correctAnswer: "B",
     currentQuestionData: null,
+    ladderTarget: getLadderTarget(20),
+    currentTurn: "A",
+    gameStartTime: Date.now(),
+    publisherLogo: null,
     surpriseData: null,
+    questions: [],
+    advertisements: [],
+    currentAdvertisement: null,
+    advertisementTimeLeft: 0,
   })
 
   const [lastCorrectTeam, setLastCorrectTeam] = useState<"A" | "B">("A")
   const [stepsGained, setStepsGained] = useState(3)
 
+  // Initialize game data on mount
+  useEffect(() => {
+    const initializeGame = async () => {
+      // Fetch advertisements first
+      const ads = await apiService.fetchAdvertisements()
+      setAdvertisements(ads)
+      
+      // Set initial screen based on whether we have ads
+      if (ads.length > 0) {
+        setGameState(prev => ({ 
+          ...prev, 
+          currentScreen: "advertisement",
+          advertisements: ads,
+          currentAdvertisement: ads[0],
+          advertisementTimeLeft: ads[0]?.duration_seconds || 0
+        }))
+      } else {
+        setGameState(prev => ({ 
+          ...prev, 
+          currentScreen: "main-menu"
+        }))
+      }
+      
+      // Fetch questions (can be done in parallel)
+      const questions = await apiService.fetchQuestions(gameState.settings.gameCode || 'default')
+      console.log('Loaded questions:', questions.length)
+      setGameQuestions(questions)
+    }
+    
+    initializeGame()
+  }, [])
+
+  // Log when gameQuestions changes for debugging
+  useEffect(() => {
+    console.log('gameQuestions updated:', gameQuestions.length, 'questions available')
+  }, [gameQuestions])
+
   const navigateToScreen = (screen: GameScreen) => {
     setGameState((prev) => ({ ...prev, currentScreen: screen }))
+  }
+
+  const handleAdvertisementClose = () => {
+    setGameState((prev) => ({ 
+      ...prev, 
+      currentScreen: "main-menu",
+      currentAdvertisement: null,
+      advertisementTimeLeft: 0
+    }))
   }
 
   const handleStartGame = () => {
@@ -57,25 +128,77 @@ export default function GameApp() {
   }
 
   const handleStartFromSettings = () => {
-    // İlk soruyu yükle
-    const firstQuestion = questions[0]
+    // İlk soruyu yükle - gameQuestions öncelikle kontrol et
+    const questionsToUse = gameQuestions.length > 0 ? gameQuestions : questions
+    
+    console.log('Starting game with:', {
+      gameQuestionsLength: gameQuestions.length,
+      questionsLength: questions.length,
+      totalAvailable: questionsToUse.length
+    })
+    
+    if (questionsToUse.length === 0) {
+      console.error('No questions available! Waiting for questions to load...')
+      // Sorular henüz yüklenmemiş, biraz bekleyip tekrar dene
+      setTimeout(() => {
+        if (gameQuestions.length > 0) {
+          handleStartFromSettings()
+        }
+      }, 500)
+      return
+    }
+    
+    const rawQuestion = questionsToUse[0]
+    console.log('First question:', rawQuestion)
+    
+    if (!rawQuestion) {
+      console.error('First question is null!')
+      return
+    }
+    
+    const firstQuestion = convertGameQuestionToQuestion(rawQuestion)
+    console.log('Converted first question:', firstQuestion)
+    
     setGameState((prev) => ({
       ...prev,
       currentScreen: "question-ready",
       currentQuestionData: firstQuestion,
-      correctAnswer: firstQuestion.correctAnswer,
+      correctAnswer: firstQuestion.correct_answer,
+      totalQuestions: prev.settings.questionCount,
+      ladderTarget: getLadderTarget(prev.settings.questionCount),
+      gameStartTime: Date.now(),
     }))
   }
 
+  const handleAdComplete = () => {
+    setGameState(prev => ({ ...prev, currentScreen: "main-menu" }))
+  }
+
+  const handleAdSkip = () => {
+    setGameState(prev => ({ ...prev, currentScreen: "main-menu" }))
+  }
+
   const loadNextQuestion = () => {
+    const questionsToUse = gameQuestions.length > 0 ? gameQuestions : questions
     const questionIndex = gameState.currentQuestion - 1
-    const nextQuestion = questions[questionIndex] || questions[0] // Fallback
+    const nextQuestion = questionsToUse[questionIndex] || questionsToUse[0] // Fallback
     
-    setGameState((prev) => ({
-      ...prev,
-      currentQuestionData: nextQuestion,
-      correctAnswer: nextQuestion.correctAnswer,
-    }))
+    console.log('Loading question:', {
+      questionIndex,
+      currentQuestion: gameState.currentQuestion,
+      availableQuestions: questionsToUse.length,
+      nextQuestion
+    })
+    
+    if (nextQuestion) {
+      setGameState((prev) => ({
+        ...prev,
+        currentQuestionData: nextQuestion,
+        correctAnswer: nextQuestion.correct_answer,
+      }))
+    } else {
+      console.error('No question found at index:', questionIndex)
+    }
   }
 
   const handleShowQuestion = () => {
@@ -146,42 +269,98 @@ export default function GameApp() {
     } else {
       // Check for surprise event (every 3 questions)
       if (gameState.settings.surpriseSystem && gameState.currentQuestion % 3 === 0) {
-        navigateToScreen("surprise-event")
+        setGameState((prev) => ({
+          ...prev,
+          currentScreen: "surprise-event",
+          surpriseData: {
+            luckyNumber: Math.floor(Math.random() * 6) + 1, // 1-6 dice roll
+            availableChoices: [],
+            selectedChoice: undefined
+          }
+        }))
       } else {
-        const nextQuestionIndex = gameState.currentQuestion
-        const nextQuestion = questions[nextQuestionIndex] || questions[0]
+        const questionsToUse = gameQuestions.length > 0 ? gameQuestions : questions
+        const nextQuestionIndex = gameState.currentQuestion // currentQuestion is already the next index
+        const rawQuestion = questionsToUse[nextQuestionIndex]
+        
+        console.log('Loading next question:', nextQuestionIndex, rawQuestion, questionsToUse.length)
+        
+        if (!rawQuestion) {
+          // No more questions, end game
+          navigateToScreen("game-results")
+          return
+        }
+        
+        const nextQuestion = convertGameQuestionToQuestion(rawQuestion)
         
         setGameState((prev) => ({
           ...prev,
           currentQuestion: prev.currentQuestion + 1,
           currentScreen: "question-ready",
           currentQuestionData: nextQuestion,
-          correctAnswer: nextQuestion.correctAnswer,
+          correctAnswer: nextQuestion.correct_answer,
         }))
       }
     }
   }
 
-  const handleSurpriseComplete = (selectedOption: { team: "A" | "B"; action: "gain" | "lose"; amount: number }) => {
-    // Apply surprise effect
-    setGameState((prev) => ({
-      ...prev,
-      teams: prev.teams.map((team) =>
-        team.id === selectedOption.team
-          ? {
-              ...team,
-              ladderPosition: Math.max(
-                0,
-                selectedOption.action === "gain"
-                  ? team.ladderPosition + selectedOption.amount
-                  : team.ladderPosition - selectedOption.amount,
-              ),
-            }
-          : team,
-      ),
-      currentQuestion: prev.currentQuestion + 1,
-      currentScreen: "question-ready",
-    }))
+  const handleSurpriseComplete = (selectedChoice: SurpriseChoice) => {
+    setGameState((prev) => {
+      // Apply surprise effect using utility function
+      const updatedTeams = applySurpriseEffect(prev.teams, selectedChoice, prev.currentTurn)
+      
+      // Check for game end conditions
+      const winner = determineWinner(updatedTeams, prev.ladderTarget)
+      const questionsExhausted = prev.currentQuestion >= prev.totalQuestions
+      
+      if (winner !== 'tie' || questionsExhausted) {
+        // Send game end callback
+        apiService.sendCallback({
+          event_type: 'game_end',
+          game_code: prev.settings.gameCode,
+          team_scores: { 
+            teamA: updatedTeams[0].ladderPosition, 
+            teamB: updatedTeams[1].ladderPosition 
+          },
+          winner: winner,
+          question_count: prev.currentQuestion - 1,
+          total_time: Math.round((Date.now() - prev.gameStartTime) / 1000)
+        })
+        
+        return {
+          ...prev,
+          teams: updatedTeams,
+          currentScreen: "game-results"
+        }
+      }
+      
+      // Continue game - load next question
+      const questionsToUse = gameQuestions.length > 0 ? gameQuestions : questions
+      const nextQuestionIndex = prev.currentQuestion
+      const rawQuestion = questionsToUse[nextQuestionIndex]
+      
+      if (!rawQuestion) {
+        // No more questions, end game
+        return {
+          ...prev,
+          teams: updatedTeams,
+          currentScreen: "game-results"
+        }
+      }
+      
+      const nextQuestion = convertGameQuestionToQuestion(rawQuestion)
+      
+      return {
+        ...prev,
+        teams: updatedTeams,
+        currentQuestion: prev.currentQuestion + 1,
+        currentScreen: "question-ready",
+        currentQuestionData: nextQuestion,
+        correctAnswer: nextQuestion.correct_answer,
+        currentTurn: prev.currentTurn === "A" ? "B" : "A", // Switch turns
+        surpriseData: null
+      }
+    })
   }
 
   const handlePlayAgain = () => {
@@ -197,12 +376,21 @@ export default function GameApp() {
         surpriseSystem: true,
       },
       currentQuestion: 1,
+      totalQuestions: 20,
       timeLeft: 30,
       selectedAnswer: null,
       answerResult: null,
       correctAnswer: "B",
       currentQuestionData: null,
+      ladderTarget: getLadderTarget(20),
+      currentTurn: "A",
+      gameStartTime: Date.now(),
+      publisherLogo: null,
       surpriseData: null,
+      questions: [],
+      advertisements: [],
+      currentAdvertisement: null,
+      advertisementTimeLeft: 0,
     })
   }
 
@@ -220,6 +408,18 @@ export default function GameApp() {
 
   // Render current screen
   switch (gameState.currentScreen) {
+    case "advertisement":
+      if (advertisements.length > 0 && currentAdIndex < advertisements.length) {
+        return (
+          <AdvertisementScreen
+            advertisement={advertisements[currentAdIndex]}
+            onAdComplete={handleAdComplete}
+            onAdSkip={handleAdSkip}
+          />
+        )
+      }
+      return <MainMenu onStartGame={handleStartGame} />
+      
     case "main-menu":
       return <MainMenu onStartGame={handleStartGame} />
 
@@ -301,107 +501,99 @@ export default function GameApp() {
               <div className="relative w-full">
                 <img src="/assets/soru-arkasi.png" alt="Question Background" className="w-full h-auto" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-                  {/* Content Area - Different layout for visual questions */}
-                  {gameState.currentQuestionData && gameState.currentQuestionData.type !== "text" ? (
-                    <div className="w-full max-w-4xl ml-8">
-                      {/* Question Title - aligned to left */}
-                      <h2 className="text-white text-2xl font-bold text-left drop-shadow-lg mb-4 ml-4">
-                        Soru: {gameState.currentQuestionData.text}
+                  {gameState.currentQuestionData && (
+                    <div className="w-full text-center">
+                      <h2 className="text-white text-2xl font-bold mb-6 drop-shadow-lg">
+                        Soru: {gameState.currentQuestionData.question_text}
                       </h2>
                       
-                      <div className="flex items-center justify-start gap-6">
-                        {/* Image on the left */}
-                        {gameState.currentQuestionData.image && (
-                          <div className="flex-shrink-0 ml-4">
-                            <div className="bg-white p-2 rounded-lg shadow-lg w-48">
-                              <img
-                                src={gameState.currentQuestionData.image}
-                                alt={gameState.currentQuestionData.imageAlt || "Soru görseli"}
-                                className="w-full h-auto max-h-32 object-contain rounded"
-                              />
-                            </div>
-                          </div>
-                        )}
-                      
-                        {/* Answer Options on the right - smaller */}
-                        <div className="grid grid-cols-2 gap-2 flex-1 max-w-md mr-4">
-                          {gameState.currentQuestionData.answers.map((answer) => {
-                            // Buton durumunu belirle
+                      {/* Render different UI based on question type */}
+                      {gameState.currentQuestionData.type === "true_false" ? (
+                        <div className="grid grid-cols-2 gap-3 w-full max-w-xl mx-auto">
+                          {["true", "false"].map((option) => {
+                            const key = option === "true" ? "A" : "B"
+                            const text = option === "true" ? "Doğru" : "Yanlış"
+                            
                             let buttonImage = "/assets/genel-buton.png"
                             
                             if (gameState.answerResult && gameState.selectedAnswer) {
-                              if (answer.id === gameState.selectedAnswer) {
-                                // Seçilen cevap
+                              if (key === gameState.selectedAnswer) {
                                 buttonImage = gameState.answerResult === "correct" ? "/assets/correct-button.png" : "/assets/wrong-button.png"
-                              } else if (answer.id === gameState.correctAnswer && gameState.answerResult === "wrong") {
-                                // Doğru cevap (yanlış seçim yapılmışsa göster)
+                              } else if (key === gameState.correctAnswer && gameState.answerResult === "wrong") {
                                 buttonImage = "/assets/correct-button.png"
                               }
                             }
-
+                            
                             return (
                               <button
-                                key={answer.id}
-                                onClick={() => !gameState.answerResult && handleAnswerClick(answer.id)}
+                                key={key}
+                                onClick={() => !gameState.answerResult && handleAnswerClick(key)}
                                 disabled={!!gameState.answerResult}
                                 className={`relative group transition-transform hover:scale-105 ${
-                                  gameState.selectedAnswer === answer.id ? "scale-105" : ""
+                                  gameState.selectedAnswer === key ? "scale-105" : ""
                                 } ${gameState.answerResult ? "cursor-not-allowed" : "cursor-pointer"}`}
                               >
                                 <img src={buttonImage} alt="Answer Button" className="w-full h-auto" />
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className="text-white font-bold text-sm drop-shadow-lg">
-                                    {answer.id}) {answer.text}
+                                  <span className="text-white font-bold text-base drop-shadow-lg">
+                                    {key}) {text}
                                   </span>
                                 </div>
                               </button>
                             )
                           })}
                         </div>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Text questions - normal layout */
-                    <div>
-                      {/* Question Title for text questions */}
-                      <h2 className="text-white text-2xl font-bold text-center drop-shadow-lg mb-4">
-                        Soru: {gameState.currentQuestionData?.text}
-                      </h2>
-                      
-                      <div className="grid grid-cols-2 gap-3 w-full max-w-xl">
-                        {gameState.currentQuestionData?.answers.map((answer) => {
-                          // Buton durumunu belirle
-                          let buttonImage = "/assets/genel-buton.png"
-                          
-                          if (gameState.answerResult && gameState.selectedAnswer) {
-                            if (answer.id === gameState.selectedAnswer) {
-                              // Seçilen cevap
-                              buttonImage = gameState.answerResult === "correct" ? "/assets/correct-button.png" : "/assets/wrong-button.png"
-                            } else if (answer.id === gameState.correctAnswer && gameState.answerResult === "wrong") {
-                              // Doğru cevap (yanlış seçim yapılmışsa göster)
-                              buttonImage = "/assets/correct-button.png"
+                      ) : gameState.currentQuestionData.type === "classic" ? (
+                        <div className="text-center">
+                          <p className="text-white text-lg mb-4">Bu soru açık uçlu bir sorudur.</p>
+                          <button
+                            onClick={() => !gameState.answerResult && handleAnswerClick("A")}
+                            disabled={!!gameState.answerResult}
+                            className="relative group transition-transform hover:scale-105 cursor-pointer"
+                          >
+                            <img src="/assets/genel-buton.png" alt="Continue Button" className="w-48 h-auto" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-white font-bold text-base drop-shadow-lg">
+                                Devam Et
+                              </span>
+                            </div>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-3 w-full max-w-xl mx-auto">
+                          {gameState.currentQuestionData.options && Object.entries(gameState.currentQuestionData.options).map(([key, text]) => {
+                            if (!text) return null
+                            
+                            let buttonImage = "/assets/genel-buton.png"
+                            
+                            if (gameState.answerResult && gameState.selectedAnswer) {
+                              if (key === gameState.selectedAnswer) {
+                                buttonImage = gameState.answerResult === "correct" ? "/assets/correct-button.png" : "/assets/wrong-button.png"
+                              } else if (key === gameState.correctAnswer && gameState.answerResult === "wrong") {
+                                buttonImage = "/assets/correct-button.png"
+                              }
                             }
-                          }
 
-                          return (
-                            <button
-                              key={answer.id}
-                              onClick={() => !gameState.answerResult && handleAnswerClick(answer.id)}
-                              disabled={!!gameState.answerResult}
-                              className={`relative group transition-transform hover:scale-105 ${
-                                gameState.selectedAnswer === answer.id ? "scale-105" : ""
-                              } ${gameState.answerResult ? "cursor-not-allowed" : "cursor-pointer"}`}
-                            >
-                              <img src={buttonImage} alt="Answer Button" className="w-full h-auto" />
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-white font-bold text-base drop-shadow-lg">
-                                  {answer.id}) {answer.text}
-                                </span>
-                              </div>
-                            </button>
-                          )
-                        })}
-                      </div>
+                            return (
+                              <button
+                                key={key}
+                                onClick={() => !gameState.answerResult && handleAnswerClick(key)}
+                                disabled={!!gameState.answerResult}
+                                className={`relative group transition-transform hover:scale-105 ${
+                                  gameState.selectedAnswer === key ? "scale-105" : ""
+                                } ${gameState.answerResult ? "cursor-not-allowed" : "cursor-pointer"}`}
+                              >
+                                <img src={buttonImage} alt="Answer Button" className="w-full h-auto" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="text-white font-bold text-base drop-shadow-lg">
+                                    {key}) {text}
+                                  </span>
+                                </div>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -444,6 +636,18 @@ export default function GameApp() {
           </div>
         </div>
       )
+
+    case "advertisement":
+      if (gameState.currentAdvertisement) {
+        return (
+          <AdvertisementScreen 
+            advertisement={gameState.currentAdvertisement}
+            onAdComplete={handleAdvertisementClose}
+            onAdSkip={handleAdvertisementClose}
+          />
+        )
+      }
+      return <MainMenu onStartGame={handleStartGame} />
 
     default:
       return <MainMenu onStartGame={handleStartGame} />
