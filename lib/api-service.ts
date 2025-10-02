@@ -152,9 +152,9 @@ class ApiService {
       {
         id: 1,
         type: "multiple_choice",
-        question_text: "Türkiye'nin başkenti neresidir?",
+        question_text: "Türkiye'nin başkenti neresidir? Türkiye'nin başkenti neresidirTürkiye'nin başkenti neresidirTürkiye'nin başkenti neresidirTürkiye'nin başkenti neresidirTürkiye'nin başkenti neresidirTürkiye'nin başkenti neresidirTürkiye'nin başkenti neresidir",
         options: {
-          A: "İstanbul",
+          A: "İstanbul İstanbul İstanbul İstanbul İstanbul İstanbul İstanbul İstanbul İstanbul",
           B: "Ankara", 
           C: "İzmir",
           D: "Bursa"

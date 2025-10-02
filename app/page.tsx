@@ -539,7 +539,7 @@ export default function GameApp() {
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-[60%] w-full max-w-4xl px-8">
               <div className="relative w-full">
                 <img src="/assets/soru-arkasi.png" alt="Question Background" className="w-full h-auto" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-6" style={{ paddingTop: '65px' }}>
                   {gameState.currentQuestionData && (
                     <div className="w-full text-center">
                       <h2 className="text-white text-2xl font-bold mb-6 drop-shadow-lg">
@@ -581,7 +581,7 @@ export default function GameApp() {
                               >
                                 <img src={buttonImage} alt="Answer Button" className="w-full h-auto" />
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className="text-white font-bold text-base drop-shadow-lg">
+                                  <span className="text-white font-bold text-lg drop-shadow-lg">
                                     {key}) {text}
                                   </span>
                                 </div>
@@ -604,7 +604,7 @@ export default function GameApp() {
                             >
                               <img src="/assets/genel-buton.png" alt="Show Answer Button" className="w-56 h-auto" />
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-white font-bold text-base drop-shadow-lg">
+                                <span className="text-white font-bold text-lg drop-shadow-lg">
                                   Cevabı Göster
                                 </span>
                               </div>
@@ -628,7 +628,7 @@ export default function GameApp() {
                                 >
                                   <img src="/assets/correct-button.png" alt="Correct Button" className="w-full h-auto" />
                                   <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-white font-bold text-base drop-shadow-lg">
+                                    <span className="text-white font-bold text-lg drop-shadow-lg">
                                       ✅ Doğru Bildi
                                     </span>
                                   </div>
@@ -640,7 +640,7 @@ export default function GameApp() {
                                 >
                                   <img src="/assets/wrong-button.png" alt="Wrong Button" className="w-full h-auto" />
                                   <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-white font-bold text-base drop-shadow-lg">
+                                    <span className="text-white font-bold text-lg drop-shadow-lg">
                                       ❌ Yanlış Bildi
                                     </span>
                                   </div>
@@ -675,7 +675,7 @@ export default function GameApp() {
                               >
                                 <img src={buttonImage} alt="Answer Button" className="w-full h-auto" />
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className="text-white font-bold text-base drop-shadow-lg">
+                                  <span className="text-white font-bold text-xl drop-shadow-lg">
                                     {key}) {text}
                                   </span>
                                 </div>

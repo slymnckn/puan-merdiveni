@@ -77,11 +77,11 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
           <img 
             src="/golden-banner.png" 
             alt="Game Over" 
-            className="h-16 w-auto object-contain drop-shadow-2xl" 
-            style={{ maxWidth: "400px" }}
+            className="h-20 w-auto object-contain drop-shadow-2xl" 
+            style={{ maxWidth: "500px" }}
           />
           <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '-8px' }}>
-            <span className="text-white font-bold text-base drop-shadow-md">🎮 OYUN BİTTİ! 🎮</span>
+            <span className="text-white font-bold text-xl drop-shadow-md">🎮 OYUN BİTTİ! 🎮</span>
           </div>
         </div>
 
@@ -90,12 +90,12 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
           
           {/* Left - Winner Panel */}
           <div className="flex-1 flex items-center justify-center">
-            <div className="relative w-full max-w-lg">
+            <div className="relative w-full max-w-xl">
               <img 
                 src="/assets/soru-arkasi.png" 
                 alt="Winner Panel" 
                 className="w-full h-auto object-contain drop-shadow-2xl" 
-                style={{ maxHeight: "400px" }} 
+                style={{ maxHeight: "480px" }} 
               />
               <div className="absolute inset-0 flex flex-col items-center justify-center py-6 px-6">
                 {winner ? (
@@ -162,16 +162,16 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
 
           {/* Right - Final Score Panel */}
           <div className="flex-1 flex items-center justify-center">
-            <div className="relative w-full max-w-md">
+            <div className="relative w-full max-w-lg">
               <img 
                 src="/score-scroll.png" 
                 alt="Final Scores" 
                 className="w-full h-auto object-contain drop-shadow-2xl" 
-                style={{ maxHeight: "500px" }}
+                style={{ maxHeight: "580px" }}
               />
               {/* FİNAL SKOR Title - Above the scroll */}
               <div className="absolute top-2 left-0 right-0 flex justify-center">
-                <span className="text-amber-900 font-bold text-xl drop-shadow-sm">FİNAL SKOR</span>
+                <span className="text-amber-900 font-bold text-2xl drop-shadow-sm">FİNAL SKOR</span>
               </div>
               
               <div className="absolute inset-0 flex flex-col items-center justify-center px-12" style={{ paddingTop: '85px', paddingBottom: '70px' }}>

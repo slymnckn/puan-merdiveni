@@ -5,9 +5,9 @@ export const questions: Question[] = [
   {
     id: "q1",
     type: "text",
-    text: "Türkiye'nin başkenti neresidir?",
+    text: "Türkiye'nin başkenti neresidir? Türkiye'nin başkenti neresidirTürkiye'nin başkenti neresidirTürkiye'nin başkenti neresidirTürkiye'nin başkenti neresidirTürkiye'nin başkenti neresidirTürkiye'nin başkenti neresidirTürkiye'nin başkenti neresidirTürkiye'nin başkenti neresidir?",
     answers: [
-      { id: "A", text: "İstanbul" },
+      { id: "A", text: "İstanbul İstanbul İstanbul İstanbul İstanbul İstanbul İstanbul İstanbul İstanbul İstanbul " },
       { id: "B", text: "Ankara" },
       { id: "C", text: "İzmir" },
       { id: "D", text: "Bursa" },

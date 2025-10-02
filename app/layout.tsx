@@ -1,21 +1,17 @@
 import type { Metadata } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Baloo_2 } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const inter = Inter({
+const baloo2 = Baloo_2({
   variable: '--font-sans',
   subsets: ['latin'],
-})
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: '--font-mono',
-  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
 })
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'Quiz Game',
+  description: 'Eğlenceli Quiz Oyunu',
   generator: 'v0.app',
 }
 
@@ -25,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={`font-sans ${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="tr">
+      <body className={`font-sans ${baloo2.variable}`}>
         {children}
         <Analytics />
       </body>
