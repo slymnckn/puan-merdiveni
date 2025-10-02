@@ -26,7 +26,7 @@ export default function QuestionReady({ gameState, onShowQuestion }: QuestionRea
           {/* Question Counter Banner */}
           <div className="relative">
             <img src="/assets/soru-sayac-banneri.png" alt="Question Banner" className="h-16 w-auto" />
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '-15px' }}>
               <span className="text-amber-900 font-bold text-lg drop-shadow-sm">
                 Soru {gameState.currentQuestion}/{gameState.settings.questionCount}
               </span>

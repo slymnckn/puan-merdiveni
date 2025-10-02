@@ -39,7 +39,7 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
   const loser = gameState.teams.find((team) => team.id !== winner?.id)
 
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-hidden">
+    <div className="fixed inset-0 w-full h-full overflow-hidden">
       <div
         className="absolute inset-0 w-full h-full"
         style={{
@@ -50,149 +50,229 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
         }}
       ></div>
 
-      <div className="relative z-10 h-full flex">
-        {/* Left Side - Winner Celebration */}
-        <div className="flex-1 flex flex-col items-center justify-center">
-          {/* Game Over Title */}
-          <div className="relative mb-8">
-            <img src="/assets/soru-sayac-banneri.png" alt="Game Over" className="h-20 w-auto" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-amber-900 font-bold text-lg drop-shadow-sm">OYUN BİTTİ!</span>
+      {/* Confetti Effect - Full Screen */}
+      {showCelebration && (
+        <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+          {Array.from({ length: 40 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `-10%`,
+                animation: `fall ${3 + Math.random() * 2}s linear ${Math.random() * 2}s infinite`,
+              }}
+            >
+              <div
+                className="w-2 h-2 rounded-full"
+                style={{
+                  backgroundColor: ["#fbbf24", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899"][
+                    Math.floor(Math.random() * 6)
+                  ],
+                }}
+              ></div>
             </div>
+          ))}
+        </div>
+      )}
+
+      <div className="relative z-10 h-full flex flex-col items-center justify-between py-5 px-6">
+        
+        {/* Top - Game Over Banner - Büyütülmüş */}
+        <div className="relative flex-shrink-0">
+          <img 
+            src="/golden-banner.png" 
+            alt="Game Over" 
+            className="h-16 w-auto object-contain drop-shadow-2xl" 
+            style={{ maxWidth: "400px" }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-white font-bold text-base drop-shadow-md">🎮 OYUN BİTTİ! 🎮</span>
           </div>
+        </div>
 
-          {/* Winner Panel */}
-          <div className="relative mb-8">
-            <img src="/assets/soru-arkasi.png" alt="Winner Panel" className="w-96 h-auto" />
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
-              {winner ? (
-                <>
-                  <h2 className="text-white font-bold text-2xl mb-6 drop-shadow-lg animate-bounce">
-                    KAZANAN
-                    <br />
-                    TAKIM {winner.id}!
-                  </h2>
+        {/* Middle - Winner Panel (Left) and Final Score (Right) */}
+        <div className="flex-1 flex items-center justify-center w-full max-w-6xl gap-8 py-4">
+          
+          {/* Left - Winner Panel */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="relative w-full max-w-lg">
+              <img 
+                src="/assets/soru-arkasi.png" 
+                alt="Winner Panel" 
+                className="w-full h-auto object-contain drop-shadow-2xl" 
+                style={{ maxHeight: "400px" }} 
+              />
+              <div className="absolute inset-0 flex flex-col items-center justify-center py-6 px-6">
+                {winner ? (
+                  <>
+                    <h2 className="text-white font-bold text-2xl drop-shadow-lg text-center mb-4" style={{ marginTop: '-20px' }}>
+                      KAZANAN<br />TAKIM {winner.id}!
+                    </h2>
 
-                  {/* Winner Character on Podium */}
-                  <div className="relative mb-4">
-                    {/* Podium */}
-                    <div className="flex items-end gap-2">
-                      <div className="w-12 h-8 bg-gradient-to-t from-amber-600 to-amber-400 rounded-t-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-xs">2</span>
-                      </div>
-                      <div className="w-16 h-12 bg-gradient-to-t from-yellow-500 to-yellow-300 rounded-t-lg flex items-center justify-center relative">
-                        <span className="text-amber-900 font-bold text-sm">1</span>
-                        {/* Winner Character */}
-                        <div className="absolute -top-12 left-1/2 transform -translate-x-1/2">
-                          <div className="relative">
+                    {/* Winner Podium */}
+                    <div className="relative">
+                      <div className="flex items-end gap-3 justify-center">
+                        {/* 2nd Place */}
+                        <div className="flex flex-col items-center">
+                          <div className="relative mb-2">
+                            {loser && (
+                              <img
+                                src={loser.character?.image || "/assets/hero-1.png"}
+                                alt="2nd Place"
+                                className="w-14 h-14 rounded-full border-2 border-gray-400 shadow-lg"
+                              />
+                            )}
+                          </div>
+                          <div className="w-16 h-14 bg-gradient-to-t from-gray-500 to-gray-300 rounded-t-lg flex items-center justify-center shadow-lg border-2 border-gray-400">
+                            <span className="text-white font-bold text-lg drop-shadow-md">2</span>
+                          </div>
+                        </div>
+
+                        {/* 1st Place - Winner */}
+                        <div className="flex flex-col items-center -mt-6">
+                          <div className="relative mb-2">
                             <img
                               src={winner.character?.image || "/assets/hero-2.png"}
                               alt="Winner"
-                              className="w-12 h-12 rounded-full border-2 border-yellow-400"
+                              className="w-20 h-20 rounded-full border-4 border-yellow-400 shadow-2xl"
+                              style={{ animation: "pulse 2s ease-in-out infinite" }}
                             />
+                            {/* Crown */}
+                            <div 
+                              className="absolute -top-5 left-1/2 transform -translate-x-1/2 text-4xl"
+                              style={{ animation: "bounce 1s ease-in-out infinite" }}
+                            >
+                              👑
+                            </div>
                             {/* Trophy */}
-                            <div className="absolute -top-2 -right-2 text-yellow-400 text-lg">🏆</div>
+                            <div className="absolute -bottom-1 -right-1 text-3xl drop-shadow-lg">🏆</div>
+                          </div>
+                          <div className="w-20 h-20 bg-gradient-to-t from-yellow-600 to-yellow-300 rounded-t-lg flex items-center justify-center shadow-2xl border-3 border-yellow-500">
+                            <span className="text-amber-900 font-bold text-2xl drop-shadow-md">1</span>
+                          </div>
+                        </div>
+
+                        {/* 3rd Place - Empty */}
+                        <div className="flex flex-col items-center">
+                          <div className="w-14 h-14 mb-2"></div>
+                          <div className="w-16 h-10 bg-gradient-to-t from-amber-700 to-amber-500 rounded-t-lg flex items-center justify-center shadow-lg border-2 border-amber-600">
+                            <span className="text-white font-bold text-base drop-shadow-md">3</span>
                           </div>
                         </div>
                       </div>
-                      <div className="w-12 h-6 bg-gradient-to-t from-amber-700 to-amber-500 rounded-t-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-xs">3</span>
-                      </div>
                     </div>
-                  </div>
-
-                  {showCelebration && (
-                    <div className="absolute inset-0 pointer-events-none">
-                      {/* Confetti Effect */}
-                      {Array.from({ length: 20 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute animate-ping"
-                          style={{
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
-                            animationDelay: `${Math.random() * 2}s`,
-                          }}
-                        >
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{
-                              backgroundColor: ["#fbbf24", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6"][
-                                Math.floor(Math.random() * 5)
-                              ],
-                            }}
-                          ></div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <h2 className="text-white font-bold text-2xl mb-6 drop-shadow-lg">BERABERE!</h2>
-              )}
+                  </>
+                ) : (
+                  <h2 className="text-white font-bold text-3xl mb-6 drop-shadow-lg">🤝 BERABERE! 🤝</h2>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Play Again Button */}
-          <button onClick={onPlayAgain} className="relative group transition-transform hover:scale-105">
-            <img src="/assets/genel-buton.png" alt="Play Again" className="h-16 w-auto min-w-[200px]" />
+          {/* Right - Final Score Panel */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="relative w-full max-w-sm">
+              <img 
+                src="/score-scroll.png" 
+                alt="Final Scores" 
+                className="w-full h-auto object-contain drop-shadow-2xl" 
+                style={{ maxHeight: "400px" }}
+              />
+              <div className="absolute inset-0 flex flex-col items-center justify-center py-16 px-12">
+                <div className="mb-6">
+                  <span className="text-amber-900 font-bold text-base drop-shadow-sm">FİNAL SKOR</span>
+                </div>
+
+                <div className="space-y-4 w-full">
+                  {gameState.teams
+                    .sort((a, b) => b.ladderPosition - a.ladderPosition)
+                    .map((team, index) => (
+                      <div
+                        key={team.id}
+                        className={`flex items-center gap-2 p-2 rounded-lg ${
+                          index === 0 ? "bg-yellow-400/30 border border-yellow-500" : "bg-white/10"
+                        }`}
+                      >
+                        {index === 0 && <span className="text-yellow-500 text-xl">👑</span>}
+                        <img
+                          src={team.character?.image || "/assets/hero-2.png"}
+                          alt={`Team ${team.id}`}
+                          className="w-10 h-10 rounded-full border-2 border-white/50"
+                        />
+                        <div className="flex-1">
+                          <div className="text-amber-900 font-bold text-sm">
+                            TAKIM {team.id}
+                          </div>
+                          <div className="text-amber-800 font-semibold text-xs">
+                            BASAMAK {team.ladderPosition}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+
+                {/* Game Stats */}
+                <div className="mt-6 text-center space-y-1">
+                  <div className="text-amber-800 text-[11px] font-medium">
+                    Toplam Soru: {gameState.currentQuestion - 1}
+                  </div>
+                  <div className="text-amber-800 text-[11px] font-medium">
+                    Modu: {gameState.settings.gameMode === "timed" ? "Süreli" : "Süresiz"}
+                  </div>
+                  <div className="text-amber-800 text-[11px] font-medium">
+                    Sürpriz: {gameState.settings.surpriseSystem ? "Açık" : "Kapalı"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bottom - Play Again Button (Center) */}
+        <div className="flex-shrink-0 flex justify-center">
+          <button onClick={onPlayAgain} className="relative group transition-transform hover:scale-105 active:scale-95">
+            <img 
+              src="/assets/genel-buton.png" 
+              alt="Play Again" 
+              className="h-14 w-auto object-contain drop-shadow-xl" 
+              style={{ minWidth: "220px" }} 
+            />
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-white font-bold text-lg drop-shadow-lg">TEKRAR OYNA</span>
             </div>
           </button>
         </div>
 
-        {/* Right Side - Final Score Table */}
-        <div className="w-80 flex flex-col items-center justify-center p-8">
-          <div className="relative">
-            <img src="/score-scroll.png" alt="Final Scores" className="w-full h-auto" />
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-              <div className="absolute top-4 left-1/2 transform -translate-x-1/2">
-                <span className="text-amber-900 font-bold text-sm drop-shadow-sm">FİNAL SKOR</span>
-              </div>
-
-              <div className="space-y-4 w-full mt-8">
-                {gameState.teams
-                  .sort((a, b) => b.ladderPosition - a.ladderPosition)
-                  .map((team, index) => (
-                    <div
-                      key={team.id}
-                      className={`flex items-center gap-3 p-2 rounded-lg ${
-                        index === 0 ? "bg-yellow-400/20" : "bg-white/10"
-                      }`}
-                    >
-                      {index === 0 && <span className="text-yellow-400 text-lg">👑</span>}
-                      <img
-                        src={team.character?.image || "/assets/hero-2.png"}
-                        alt={`Team ${team.id}`}
-                        className="w-8 h-8 rounded-full"
-                      />
-                      <div className="flex-1">
-                        <div className="text-white font-semibold text-sm">
-                          TAKIM {team.id}: {team.name} - BASAMAK {team.ladderPosition}
-                        </div>
-                        {index === 0 && winner && (
-                          <div className="text-yellow-300 font-bold text-xs">
-                            TAKIM {winner.id} - {team.ladderPosition} BASAMAK (HEDEF!)
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-
-              {/* Game Stats */}
-              <div className="mt-6 text-center">
-                <div className="text-white/70 text-xs space-y-1">
-                  <div>Toplam Soru: {gameState.currentQuestion - 1}</div>
-                  <div>Oyun Modu: {gameState.settings.gameMode === "timed" ? "Süreli" : "Süresiz"}</div>
-                  <div>Sürpriz Sistemi: {gameState.settings.surpriseSystem ? "Açık" : "Kapalı"}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fall {
+          from {
+            transform: translateY(0) rotate(0deg);
+          }
+          to {
+            transform: translateY(100vh) rotate(360deg);
+          }
+        }
+        @keyframes bounce {
+          0%, 100% {
+            transform: translateY(0) translateX(-50%);
+          }
+          50% {
+            transform: translateY(-10px) translateX(-50%);
+          }
+        }
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.05);
+          }
+        }
+      `}</style>
     </div>
   )
 }

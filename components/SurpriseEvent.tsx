@@ -16,7 +16,6 @@ export default function SurpriseEvent({ gameState, onSurpriseComplete }: Surpris
   useEffect(() => {
     if (!gameState.surpriseData) return
     
-    // Generate 3 random choices for the player to pick from
     const choices: SurpriseChoice[] = []
     for (let i = 0; i < 3; i++) {
       choices.push(selectSurpriseChoice())
@@ -30,7 +29,7 @@ export default function SurpriseEvent({ gameState, onSurpriseComplete }: Surpris
     setSelectedChoice(choice)
     setTimeout(() => {
       onSurpriseComplete(choice)
-    }, 2000) // Show selection for 2 seconds before proceeding
+    }, 2000)
   }
 
   const getChoiceColor = (choice: SurpriseChoice) => {
@@ -54,7 +53,7 @@ export default function SurpriseEvent({ gameState, onSurpriseComplete }: Surpris
   }
 
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-hidden">
+    <div className="fixed inset-0 w-full h-full overflow-hidden">
       <div
         className="absolute inset-0 w-full h-full"
         style={{
@@ -65,103 +64,120 @@ export default function SurpriseEvent({ gameState, onSurpriseComplete }: Surpris
         }}
       ></div>
 
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-8">
-        {/* Title */}
-        <div className="relative mb-8">
-          <img src="/assets/soru-sayac-banneri.png" alt="Surprise Title" className="h-20 w-auto" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-amber-900 font-bold text-lg drop-shadow-sm">🎲 SÜRPRİZ ZAMANI! 🎲</span>
-          </div>
-        </div>
-
-        {/* Current Turn Indicator */}
-        <div className="text-white text-center mb-6">
-          <h3 className="text-xl font-bold drop-shadow-lg">
-            {gameState.currentTurn === 'A' ? 'Takım A' : 'Takım B'} sürpriz seçimi yapıyor
-          </h3>
-          <p className="text-white/80 mt-2">Şanslı sayı: {gameState.surpriseData.luckyNumber}</p>
-        </div>
-
-        {/* Choice Panel */}
-        <div className="relative w-full max-w-3xl">
-          <img src="/assets/soru-arkasi.png" alt="Surprise Background" className="w-full h-auto" />
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
-            
-            {selectedChoice ? (
-              /* Selected Choice Display */
-              <div className="text-center">
-                <div className="text-white text-2xl font-bold mb-4">
-                  <span className="text-4xl mr-2">{getChoiceIcon(selectedChoice)}</span>
-                  Seçilen: {selectedChoice.choice}
-                </div>
-                <div className="text-white/80 mb-6">
-                  Seçim uygulanıyor...
-                </div>
-                <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto"></div>
-              </div>
-            ) : (
-              /* Choice Selection */
-              <div className="w-full max-w-lg">
-                <h2 className="text-white text-xl font-bold text-center drop-shadow-lg mb-6">
-                  Bir seçenek seçin:
-                </h2>
-                
-                <div className="space-y-4">
-                  {availableChoices.map((choice, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleChoiceSelect(choice)}
-                      className="relative group transition-all hover:scale-105 w-full"
-                    >
-                      <img src="/assets/genel-buton.png" alt="Choice Button" className="w-full h-auto" />
-                      <div className="absolute inset-0 flex items-center justify-center px-4">
-                        <div className="text-center">
-                          <span className="text-2xl mr-2">{getChoiceIcon(choice)}</span>
-                          <span className={`font-bold text-base drop-shadow-lg ${getChoiceColor(choice)}`}>
-                            {choice.choice}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Team Status */}
-        <div className="absolute bottom-8 left-0 right-0 flex justify-center items-center gap-8 px-8">
-          {/* Team A */}
+      <div className="relative z-10 h-full flex flex-col items-center justify-between py-4 px-4">
+        
+        {/* Top Section - Fixed */}
+        <div className="w-full flex flex-col items-center gap-4 flex-shrink-0">
           <div className="relative">
-            <img src="/assets/genel-buton.png" alt="Team A" className="h-16 w-auto min-w-[200px]" />
-            <div className="absolute inset-0 flex items-center justify-center gap-2">
+            <img 
+              src="/golden-banner.png" 
+              alt="Surprise Title" 
+              className="h-16 w-auto object-contain drop-shadow-xl max-w-[350px]" 
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-white font-bold text-base drop-shadow-md">
+                🎲 SÜRPRİZ ZAMANI! 🎲
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-purple-900/90 backdrop-blur-sm rounded-lg px-8 py-3 border border-yellow-400 shadow-lg">
+            <h3 className="text-base font-bold text-white text-center">
+              {gameState.currentTurn === 'A' ? 'Takım A' : 'Takım B'} seçim yapıyor
+            </h3>
+            <p className="text-yellow-300 font-semibold text-sm text-center">
+              Şanslı sayı: {gameState.surpriseData.luckyNumber}
+            </p>
+          </div>
+        </div>
+
+        {/* Middle Section - Choices - Flexible but no scroll */}
+        <div className="w-full max-w-md flex-1 flex items-center justify-center px-2 py-2">
+          {selectedChoice ? (
+            <div className="text-center bg-purple-900/80 backdrop-blur-sm rounded-xl px-8 py-6 border-2 border-yellow-400 shadow-xl max-w-md">
+              <div className="text-white text-lg font-bold mb-4">
+                <span className="text-3xl mr-2">{getChoiceIcon(selectedChoice)}</span>
+                <br />
+                <span className="text-base">{selectedChoice.choice}</span>
+              </div>
+              <div className="text-yellow-300 font-semibold text-base mb-5">
+                Seçim uygulanıyor...
+              </div>
+              <div className="animate-spin rounded-full h-12 w-12 border-3 border-yellow-400 border-t-transparent mx-auto"></div>
+            </div>
+          ) : (
+            <div className="w-full">
+              <h2 className="text-white text-lg font-bold text-center mb-5 bg-purple-900/70 backdrop-blur-sm py-3 px-6 rounded-lg border border-yellow-400 mx-auto max-w-fit">
+                Bir seçenek seçin:
+              </h2>
+              
+              <div className="space-y-5 max-w-2xl mx-auto">
+                {availableChoices.map((choice, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleChoiceSelect(choice)}
+                    className="relative group transition-all hover:scale-[1.02] active:scale-95 w-full"
+                  >
+                    <img 
+                      src="/assets/genel-buton.png" 
+                      alt="Choice Button" 
+                      className="w-full h-auto object-contain drop-shadow-lg" 
+                      style={{ height: '80px' }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center px-8">
+                      <span className="text-xl mr-3">{getChoiceIcon(choice)}</span>
+                      <span className={`font-bold text-lg drop-shadow-md ${getChoiceColor(choice)} text-center leading-tight`}>
+                        {choice.choice}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Section - Team Status - Fixed */}
+        <div className="w-full flex justify-center items-center gap-4 flex-shrink-0 mt-4">
+          <div className="relative">
+            <img 
+              src="/assets/genel-buton.png" 
+              alt="Team A" 
+              className="h-12 w-auto object-contain drop-shadow-lg" 
+              style={{ minWidth: '160px' }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center gap-2 px-4">
               <img
                 src={gameState.teams[0].character?.image || "/assets/hero-2.png"}
-                alt="Team A Character"
-                className="h-10 w-10"
+                alt="Team A"
+                className="h-7 w-7 rounded-full border-2 border-blue-400"
               />
-              <span className="text-white font-bold text-sm drop-shadow-lg">
-                TAKIM A: {gameState.teams[0].ladderPosition} / {gameState.ladderTarget}
+              <span className="text-white font-bold text-sm drop-shadow-md whitespace-nowrap">
+                A: {gameState.teams[0].ladderPosition}/{gameState.ladderTarget}
               </span>
             </div>
           </div>
 
-          {/* Team B */}
           <div className="relative">
-            <img src="/assets/genel-buton.png" alt="Team B" className="h-16 w-auto min-w-[200px]" />
-            <div className="absolute inset-0 flex items-center justify-center gap-2">
+            <img 
+              src="/assets/genel-buton.png" 
+              alt="Team B" 
+              className="h-12 w-auto object-contain drop-shadow-lg" 
+              style={{ minWidth: '160px' }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center gap-2 px-4">
               <img
                 src={gameState.teams[1].character?.image || "/assets/hero-1.png"}
-                alt="Team B Character"
-                className="h-10 w-10"
+                alt="Team B"
+                className="h-7 w-7 rounded-full border-2 border-pink-400"
               />
-              <span className="text-white font-bold text-sm drop-shadow-lg">
-                TAKIM B: {gameState.teams[1].ladderPosition} / {gameState.ladderTarget}
+              <span className="text-white font-bold text-sm drop-shadow-md whitespace-nowrap">
+                B: {gameState.teams[1].ladderPosition}/{gameState.ladderTarget}
               </span>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   )
