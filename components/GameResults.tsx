@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import type { GameState, Team } from "@/types/game"
+import { determineWinner } from "@/lib/game-utils"
 
 interface GameResultsProps {
   gameState: GameState
@@ -15,24 +16,17 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
     setShowCelebration(true)
   }, [])
 
-  // Determine winner
+  // Determine winner using utility function
   const getWinner = (): Team | null => {
-    const targetSteps =
-      gameState.settings.questionCount === 10
-        ? 25
-        : gameState.settings.questionCount === 20
-          ? 50
-          : gameState.settings.questionCount === 30
-            ? 75
-            : 100
-
-    // Check if any team reached target
-    const targetWinner = gameState.teams.find((team) => team.ladderPosition >= targetSteps)
-    if (targetWinner) return targetWinner
-
-    // If no target reached, highest position wins
-    const sortedTeams = [...gameState.teams].sort((a, b) => b.ladderPosition - a.ladderPosition)
-    return sortedTeams[0].ladderPosition > 0 ? sortedTeams[0] : null
+    const winnerResult = determineWinner(gameState.teams, gameState.ladderTarget)
+    
+    if (winnerResult === 'tie') {
+      // If tie, return team with higher position, or null if both are 0
+      const sortedTeams = [...gameState.teams].sort((a, b) => b.ladderPosition - a.ladderPosition)
+      return sortedTeams[0].ladderPosition > 0 ? sortedTeams[0] : null
+    }
+    
+    return gameState.teams.find(team => team.id === winnerResult) || null
   }
 
   const winner = getWinner()
@@ -86,7 +80,7 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
             className="h-16 w-auto object-contain drop-shadow-2xl" 
             style={{ maxWidth: "400px" }}
           />
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '-8px' }}>
             <span className="text-white font-bold text-base drop-shadow-md">🎮 OYUN BİTTİ! 🎮</span>
           </div>
         </div>
@@ -106,12 +100,8 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
               <div className="absolute inset-0 flex flex-col items-center justify-center py-6 px-6">
                 {winner ? (
                   <>
-                    <h2 className="text-white font-bold text-2xl drop-shadow-lg text-center mb-4" style={{ marginTop: '-20px' }}>
-                      KAZANAN<br />TAKIM {winner.id}!
-                    </h2>
-
                     {/* Winner Podium */}
-                    <div className="relative">
+                    <div className="relative" style={{ marginTop: '50px' }}>
                       <div className="flex items-end gap-3 justify-center">
                         {/* 2nd Place */}
                         <div className="flex flex-col items-center">
@@ -141,7 +131,7 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
                             {/* Crown */}
                             <div 
                               className="absolute -top-5 left-1/2 transform -translate-x-1/2 text-4xl"
-                              style={{ animation: "bounce 1s ease-in-out infinite" }}
+                              style={{ animation: "bounce 1s ease-in-out infinite", marginLeft: '24px' }}
                             >
                               👑
                             </div>
@@ -172,57 +162,48 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
 
           {/* Right - Final Score Panel */}
           <div className="flex-1 flex items-center justify-center">
-            <div className="relative w-full max-w-sm">
+            <div className="relative w-full max-w-md">
               <img 
                 src="/score-scroll.png" 
                 alt="Final Scores" 
                 className="w-full h-auto object-contain drop-shadow-2xl" 
-                style={{ maxHeight: "400px" }}
+                style={{ maxHeight: "500px" }}
               />
-              <div className="absolute inset-0 flex flex-col items-center justify-center py-16 px-12">
-                <div className="mb-6">
-                  <span className="text-amber-900 font-bold text-base drop-shadow-sm">FİNAL SKOR</span>
-                </div>
-
-                <div className="space-y-4 w-full">
+              {/* FİNAL SKOR Title - Above the scroll */}
+              <div className="absolute top-2 left-0 right-0 flex justify-center">
+                <span className="text-amber-900 font-bold text-xl drop-shadow-sm">FİNAL SKOR</span>
+              </div>
+              
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-12" style={{ paddingTop: '85px', paddingBottom: '70px' }}>
+                <div className="space-y-3 w-full">
                   {gameState.teams
                     .sort((a, b) => b.ladderPosition - a.ladderPosition)
                     .map((team, index) => (
                       <div
                         key={team.id}
-                        className={`flex items-center gap-2 p-2 rounded-lg ${
-                          index === 0 ? "bg-yellow-400/30 border border-yellow-500" : "bg-white/10"
-                        }`}
+                        className="flex flex-col gap-1 p-2"
                       >
-                        {index === 0 && <span className="text-yellow-500 text-xl">👑</span>}
-                        <img
-                          src={team.character?.image || "/assets/hero-2.png"}
-                          alt={`Team ${team.id}`}
-                          className="w-10 h-10 rounded-full border-2 border-white/50"
-                        />
-                        <div className="flex-1">
-                          <div className="text-amber-900 font-bold text-sm">
+                        <div className="flex items-center gap-2">
+                          {index === 0 && <span className="text-yellow-500 text-lg w-6">👑</span>}
+                          {index !== 0 && <span className="w-6"></span>}
+                          <img
+                            src={team.character?.image || "/assets/hero-2.png"}
+                            alt={`Team ${team.id}`}
+                            className="w-10 h-10 rounded-full border-2 border-white/50"
+                          />
+                          <div className="text-amber-900 font-bold text-base">
                             TAKIM {team.id}
                           </div>
-                          <div className="text-amber-800 font-semibold text-xs">
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-6"></span>
+                          <span className="w-10"></span>
+                          <div className="text-amber-800 font-semibold text-sm">
                             BASAMAK {team.ladderPosition}
                           </div>
                         </div>
                       </div>
                     ))}
-                </div>
-
-                {/* Game Stats */}
-                <div className="mt-6 text-center space-y-1">
-                  <div className="text-amber-800 text-[11px] font-medium">
-                    Toplam Soru: {gameState.currentQuestion - 1}
-                  </div>
-                  <div className="text-amber-800 text-[11px] font-medium">
-                    Modu: {gameState.settings.gameMode === "timed" ? "Süreli" : "Süresiz"}
-                  </div>
-                  <div className="text-amber-800 text-[11px] font-medium">
-                    Sürpriz: {gameState.settings.surpriseSystem ? "Açık" : "Kapalı"}
-                  </div>
                 </div>
               </div>
             </div>

@@ -24,6 +24,7 @@ import {
   convertGameQuestionToQuestion
 } from "@/lib/game-utils"
 import { questions } from "@/data/questions"
+import { placeholderQuestions } from "@/data/placeholder-questions"
 
 export default function GameApp() {
   const [advertisements, setAdvertisements] = useState<Advertisement[]>([])
@@ -60,6 +61,28 @@ export default function GameApp() {
 
   const [lastCorrectTeam, setLastCorrectTeam] = useState<"A" | "B">("A")
   const [stepsGained, setStepsGained] = useState(3)
+
+  // Soru havuzunu genişlet - yeterli soru yoksa placeholder'lardan ekle
+  const ensureSufficientQuestions = (requiredCount: number): GameQuestion[] => {
+    let availableQuestions = gameQuestions.length > 0 ? [...gameQuestions] : []
+    
+    // Yeterli soru yoksa placeholder'lardan ekle
+    if (availableQuestions.length < requiredCount) {
+      console.log(`Insufficient questions (${availableQuestions.length}/${requiredCount}). Adding placeholders...`)
+      
+      // Placeholder'ları karıştır
+      const shuffledPlaceholders = [...placeholderQuestions].sort(() => Math.random() - 0.5)
+      
+      // Eksik sayı kadar placeholder ekle
+      const neededCount = requiredCount - availableQuestions.length
+      const additionalQuestions = shuffledPlaceholders.slice(0, neededCount)
+      
+      availableQuestions = [...availableQuestions, ...additionalQuestions]
+      console.log(`Added ${additionalQuestions.length} placeholder questions. Total: ${availableQuestions.length}`)
+    }
+    
+    return availableQuestions
+  }
 
   // Initialize game data on mount
   useEffect(() => {
@@ -128,23 +151,19 @@ export default function GameApp() {
   }
 
   const handleStartFromSettings = () => {
-    // İlk soruyu yükle - gameQuestions öncelikle kontrol et
-    const questionsToUse = gameQuestions.length > 0 ? gameQuestions : questions
+    // Yeterli soru olduğundan emin ol
+    const requiredQuestionCount = gameState.settings.questionCount
+    const questionsToUse = ensureSufficientQuestions(requiredQuestionCount)
     
     console.log('Starting game with:', {
-      gameQuestionsLength: gameQuestions.length,
-      questionsLength: questions.length,
-      totalAvailable: questionsToUse.length
+      requiredQuestions: requiredQuestionCount,
+      availableQuestions: questionsToUse.length,
+      fromAPI: gameQuestions.length,
+      fromPlaceholder: questionsToUse.length - gameQuestions.length
     })
     
     if (questionsToUse.length === 0) {
-      console.error('No questions available! Waiting for questions to load...')
-      // Sorular henüz yüklenmemiş, biraz bekleyip tekrar dene
-      setTimeout(() => {
-        if (gameQuestions.length > 0) {
-          handleStartFromSettings()
-        }
-      }, 500)
+      console.error('No questions available at all! This should not happen.')
       return
     }
     
@@ -158,6 +177,9 @@ export default function GameApp() {
     
     const firstQuestion = convertGameQuestionToQuestion(rawQuestion)
     console.log('Converted first question:', firstQuestion)
+    
+    // Genişletilmiş soru havuzunu state'e kaydet
+    setGameQuestions(questionsToUse)
     
     setGameState((prev) => ({
       ...prev,
@@ -221,7 +243,24 @@ export default function GameApp() {
 
   const handleAnswerClick = (answer: string) => {
     // Cevap durumunu kontrol et
-    const isCorrect = answer === gameState.correctAnswer
+    let isCorrect = false
+    
+    // Classic soru tipi için özel kontrol
+    if (gameState.currentQuestionData?.type === "classic") {
+      // answer "correct" veya "wrong" olarak geliyor (manuel seçim)
+      isCorrect = answer === "correct"
+    }
+    // True/False sorular için özel kontrol
+    else if (gameState.currentQuestionData?.type === "true_false") {
+      // answer "A" veya "B" olarak geliyor
+      // correctAnswer "true" veya "false" olarak API'den geliyor
+      const selectedValue = answer === "A" ? "true" : "false"
+      isCorrect = selectedValue === gameState.correctAnswer
+    } else {
+      // Multiple choice ve diğer tipler için normal karşılaştırma
+      isCorrect = answer === gameState.correctAnswer
+    }
+    
     const currentTeam = gameState.currentQuestion % 2 === 1 ? "A" : "B" // Alternate teams
 
     // Cevap durumunu state'e kaydet
@@ -246,25 +285,22 @@ export default function GameApp() {
       }))
     }
 
-    setTimeout(() => {
-      navigateToScreen("ladder-progress")
-    }, 2000) // 2 saniye bekle ki butonlar görünsün
+    // Artık otomatik geçmiyor, kullanıcı "Devam Et" butonuna basacak
+  }
+
+  const handleContinueToLadder = () => {
+    navigateToScreen("ladder-progress")
   }
 
   const handleContinueFromLadder = () => {
-    // Check if game should end
-    const targetSteps =
-      gameState.settings.questionCount === 10
-        ? 25
-        : gameState.settings.questionCount === 20
-          ? 50
-          : gameState.settings.questionCount === 30
-            ? 75
-            : 100
+    // Check if game should end using the utility function
+    const winner = determineWinner(gameState.teams, gameState.ladderTarget)
+    const questionsExhausted = gameState.currentQuestion >= gameState.settings.questionCount
+    
+    // Oyun sadece birisi hedefe ulaştıysa VEYA sorular bittiyse biter
+    const shouldEndGame = (winner !== 'tie') || questionsExhausted
 
-    const winner = gameState.teams.find((team) => team.ladderPosition >= targetSteps)
-
-    if (winner || gameState.currentQuestion >= gameState.settings.questionCount) {
+    if (shouldEndGame) {
       navigateToScreen("game-results")
     } else {
       // Check for surprise event (every 3 questions)
@@ -313,7 +349,10 @@ export default function GameApp() {
       const winner = determineWinner(updatedTeams, prev.ladderTarget)
       const questionsExhausted = prev.currentQuestion >= prev.totalQuestions
       
-      if (winner !== 'tie' || questionsExhausted) {
+      // Oyun sadece birisi hedefe ulaştıysa VEYA sorular bittiyse biter
+      const shouldEndGame = (winner !== 'tie') || questionsExhausted
+      
+      if (shouldEndGame) {
         // Send game end callback
         apiService.sendCallback({
           event_type: 'game_end',
@@ -517,10 +556,17 @@ export default function GameApp() {
                             let buttonImage = "/assets/genel-buton.png"
                             
                             if (gameState.answerResult && gameState.selectedAnswer) {
+                              // Seçilen buton
                               if (key === gameState.selectedAnswer) {
                                 buttonImage = gameState.answerResult === "correct" ? "/assets/correct-button.png" : "/assets/wrong-button.png"
-                              } else if (key === gameState.correctAnswer && gameState.answerResult === "wrong") {
-                                buttonImage = "/assets/correct-button.png"
+                              } 
+                              // Doğru cevabı göster (yanlış seçildiğinde)
+                              else if (gameState.answerResult === "wrong") {
+                                // correctAnswer "true" veya "false" string olarak geliyor
+                                const correctKey = gameState.correctAnswer === "true" ? "A" : "B"
+                                if (key === correctKey) {
+                                  buttonImage = "/assets/correct-button.png"
+                                }
                               }
                             }
                             
@@ -544,20 +590,64 @@ export default function GameApp() {
                           })}
                         </div>
                       ) : gameState.currentQuestionData.type === "classic" ? (
-                        <div className="text-center">
-                          <p className="text-white text-lg mb-4">Bu soru açık uçlu bir sorudur.</p>
-                          <button
-                            onClick={() => !gameState.answerResult && handleAnswerClick("A")}
-                            disabled={!!gameState.answerResult}
-                            className="relative group transition-transform hover:scale-105 cursor-pointer"
-                          >
-                            <img src="/assets/genel-buton.png" alt="Continue Button" className="w-48 h-auto" />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="text-white font-bold text-base drop-shadow-lg">
-                                Devam Et
-                              </span>
+                        <div className="text-center space-y-4">
+                          {!gameState.selectedAnswer ? (
+                            // İlk aşama: Cevabı Göster butonu
+                            <button
+                              onClick={() => {
+                                setGameState((prev) => ({ 
+                                  ...prev, 
+                                  selectedAnswer: "show_answer" 
+                                }))
+                              }}
+                              className="relative group transition-transform hover:scale-105 cursor-pointer"
+                            >
+                              <img src="/assets/genel-buton.png" alt="Show Answer Button" className="w-56 h-auto" />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-white font-bold text-base drop-shadow-lg">
+                                  Cevabı Göster
+                                </span>
+                              </div>
+                            </button>
+                          ) : !gameState.answerResult ? (
+                            // İkinci aşama: Cevap gösterildi, şimdi Doğru/Yanlış bilme butonları
+                            <div className="space-y-4">
+                              {/* Cevabı göster */}
+                              <div className="bg-purple-900/80 backdrop-blur-sm rounded-lg px-6 py-4 border-2 border-yellow-400">
+                                <p className="text-yellow-300 font-semibold text-sm mb-2">CEVAP:</p>
+                                <p className="text-white text-lg font-bold">
+                                  {gameState.currentQuestionData.options?.A || "Cevap yükleniyor..."}
+                                </p>
+                              </div>
+                              
+                              {/* Doğru / Yanlış bilme butonları */}
+                              <div className="grid grid-cols-2 gap-4 max-w-xl mx-auto">
+                                <button
+                                  onClick={() => handleAnswerClick("correct")}
+                                  className="relative group transition-transform hover:scale-105 cursor-pointer"
+                                >
+                                  <img src="/assets/correct-button.png" alt="Correct Button" className="w-full h-auto" />
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-white font-bold text-base drop-shadow-lg">
+                                      ✅ Doğru Bildi
+                                    </span>
+                                  </div>
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleAnswerClick("wrong")}
+                                  className="relative group transition-transform hover:scale-105 cursor-pointer"
+                                >
+                                  <img src="/assets/wrong-button.png" alt="Wrong Button" className="w-full h-auto" />
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-white font-bold text-base drop-shadow-lg">
+                                      ❌ Yanlış Bildi
+                                    </span>
+                                  </div>
+                                </button>
+                              </div>
                             </div>
-                          </button>
+                          ) : null}
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-3 w-full max-w-xl mx-auto">
@@ -600,6 +690,27 @@ export default function GameApp() {
               </div>
             </div>
 
+            {/* Devam Et Butonu - Ekranın sağ tarafında sabit pozisyon */}
+            {gameState.answerResult && (
+              <div className="fixed right-8 top-1/2 transform -translate-y-1/2 z-30">
+                <button
+                  onClick={handleContinueToLadder}
+                  className="relative group transition-transform hover:scale-110 cursor-pointer"
+                >
+                  <img 
+                    src="/assets/devam-et.png" 
+                    alt="Devam Et" 
+                    className="h-50 w-auto object-contain drop-shadow-2xl" 
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-white font-bold text-xl drop-shadow-lg">
+                      DEVAM ET
+                    </span>
+                  </div>
+                </button>
+              </div>
+            )}
+
             <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-8 px-8 pb-12 z-20">
               {/* Team A */}
               <div className="relative">
@@ -611,9 +722,9 @@ export default function GameApp() {
                     className="h-10 w-10"
                   />
                   <span className="text-white font-bold text-sm drop-shadow-lg">
-                    TAKIM A: {gameState.teams[0].name}
+                    TAKIM A
                   </span>
-                  <span className="text-white font-bold text-lg drop-shadow-lg">{gameState.teams[0].score}</span>
+                  <span className="text-white font-bold text-lg drop-shadow-lg">{gameState.teams[0].ladderPosition}</span>
                 </div>
               </div>
 
@@ -627,9 +738,9 @@ export default function GameApp() {
                     className="h-10 w-10"
                   />
                   <span className="text-white font-bold text-sm drop-shadow-lg">
-                    TAKIM B: {gameState.teams[1].name}
+                    TAKIM B
                   </span>
-                  <span className="text-white font-bold text-lg drop-shadow-lg">{gameState.teams[1].score}</span>
+                  <span className="text-white font-bold text-lg drop-shadow-lg">{gameState.teams[1].ladderPosition}</span>
                 </div>
               </div>
             </div>

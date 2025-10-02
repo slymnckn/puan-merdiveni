@@ -17,12 +17,85 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
     setShowAnimation(true)
   }, [])
 
-  // Ladder step configuration - dynamically generated
-  const LADDER_STEPS = [1, 2, 3, 5, 6, 8, 9, 10, 16, 20]
+  // Dinamik merdiven sistemi - Her takım için ayrı Sliding Window
+  const VISIBLE_STEPS = 10 // Ekranda görünecek basamak sayısı (sabit)
+  const TARGET = gameState.ladderTarget // Hedefe göre toplam basamak sayısı
+  
+  // Tüm basamakları oluştur (1'den hedefe kadar, her adımda +1)
+  const generateAllSteps = () => {
+    const steps: number[] = []
+    // 1'den hedefe kadar tüm sayıları ekle
+    for (let i = 1; i <= TARGET; i++) {
+      steps.push(i)
+    }
+    return steps
+  }
+  
+  const ALL_STEPS = generateAllSteps()
+  
+  // Her takım için ayrı sliding window
+  const getVisibleStepsForTeam = (teamId: "A" | "B") => {
+    const team = gameState.teams.find(t => t.id === teamId)
+    const teamPosition = team?.ladderPosition || 1
+    
+    // Eğer pozisyon 10'dan küçük veya eşitse, 1-10 arası göster
+    if (teamPosition <= VISIBLE_STEPS) {
+      return ALL_STEPS.slice(0, VISIBLE_STEPS)
+    }
+    
+    // Sliding window: Karakterin 3 basamak gerisinden başla
+    const windowStart = Math.max(1, teamPosition - 3)
+    const windowEnd = windowStart + VISIBLE_STEPS
+    
+    // windowStart-1 çünkü array 0-indexed ama basamaklar 1-indexed
+    return ALL_STEPS.slice(windowStart - 1, Math.min(windowEnd - 1, ALL_STEPS.length))
+  }
+  
+  // Basamak rengini belirle (her 10 basamakta bir değişir)
+  const getStepColorTier = (stepValue: number): number => {
+    return Math.floor((stepValue - 1) / 10)
+  }
+  
+  // Renk paleti - her tier için farklı renk
+  const getColorPalette = (tier: number, team: "A" | "B") => {
+    const colorTiers = {
+      A: [
+        // Tier 0 (1-10): Mor
+        { base: "#5B21B6", light: "#8B5CF6", name: "Mor" },
+        // Tier 1 (11-20): Mavi
+        { base: "#1E40AF", light: "#3B82F6", name: "Mavi" },
+        // Tier 2 (21-30): Yeşil-Mavi
+        { base: "#0F766E", light: "#14B8A6", name: "Turkuaz" },
+        // Tier 3 (31-40): Yeşil
+        { base: "#15803D", light: "#22C55E", name: "Yeşil" },
+        // Tier 4 (41-50): Sarı-Yeşil
+        { base: "#CA8A04", light: "#EAB308", name: "Sarı" },
+        // Tier 5+ (51+): Altın
+        { base: "#B45309", light: "#F59E0B", name: "Altın" }
+      ],
+      B: [
+        // Tier 0 (1-10): Pembe
+        { base: "#C026D3", light: "#E879F9", name: "Pembe" },
+        // Tier 1 (11-20): Kırmızı-Pembe
+        { base: "#BE123C", light: "#FB7185", name: "Pembe-Kırmızı" },
+        // Tier 2 (21-30): Turuncu
+        { base: "#C2410C", light: "#FB923C", name: "Turuncu" },
+        // Tier 3 (31-40): Sarı-Turuncu
+        { base: "#CA8A04", light: "#FBBF24", name: "Turuncu-Sarı" },
+        // Tier 4 (41-50): Sarı
+        { base: "#A16207", light: "#FDE047", name: "Sarı" },
+        // Tier 5+ (51+): Altın
+        { base: "#B45309", light: "#F59E0B", name: "Altın" }
+      ]
+    }
+    
+    const teamColors = colorTiers[team]
+    return teamColors[Math.min(tier, teamColors.length - 1)]
+  }
   
   // Calculate vertical position for each step (0-100%)
   const getStepPosition = (stepIndex: number): { bottom: number; left: number; right: number } => {
-    const totalSteps = LADDER_STEPS.length
+    const totalSteps = VISIBLE_STEPS // Sabit 10 basamak
     const verticalSpacing = 65 / (totalSteps - 1) // Distribution from 10% to 75%
     const bottom = 10 + (stepIndex * verticalSpacing)
     
@@ -53,6 +126,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
     const position = getStepPosition(stepIndex)
     const teamPosition = getTeamPosition(team)
     const isActiveStep = teamPosition === stepValue
+    const isPassed = teamPosition > stepValue
     
     const positionStyle = team === "A" 
       ? { bottom: `${position.bottom}%`, left: `${position.left}%` }
@@ -63,27 +137,30 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
     
     // Basamaklı merdiven görünümü - görsel referansa göre
     // Her basamak soldan sağa doğru uzanan dikdörtgen şeklinde
-    const totalSteps = LADDER_STEPS.length
     const stepWidth = 180 + (stepIndex * 8) // Her basamak gittikçe genişler
     const stepHeight = 45 // Sabit yükseklik
     
-    // Renk gradientleri - mor ve pembe tonları (görsel referans) - OPAK VE BELİRGİN
-    const isPassed = teamPosition > stepValue
-    const baseColor = team === "A" ? "#5B21B6" : "#C026D3" // Daha koyu ve belirgin mor/pembe taban
-    const lightColor = team === "A" ? "#8B5CF6" : "#E879F9" // Daha belirgin açık ton
+    // Tier'a göre renk al (her 10 basamakta bir değişir)
+    const tier = getStepColorTier(stepValue)
+    const colorPalette = getColorPalette(tier, team)
+    const baseColor = colorPalette.base
+    const lightColor = colorPalette.light
     
-    // Gradient oluştur - tamamen opak
+    // Opacity kontrolü - geçilmemiş basamaklar soluk
+    const opacity = isActiveStep ? 1 : isPassed ? 0.9 : 0.3
+    
+    // Gradient oluştur
     const gradientStyle = isActiveStep 
       ? `linear-gradient(135deg, ${lightColor} 0%, ${baseColor} 100%)`
       : isPassed 
-        ? `linear-gradient(135deg, ${lightColor} 0%, ${baseColor} 100%)` // Opak geçmiş basamaklar
-        : `linear-gradient(135deg, #7C3AED 0%, #4C1D95 100%)` // Opak pasif basamaklar (koyu mor)
+        ? `linear-gradient(135deg, ${lightColor} 0%, ${baseColor} 100%)`
+        : `linear-gradient(135deg, ${lightColor} 0%, ${baseColor} 100%)`
 
     return (
       <div
         key={`${team}-${stepValue}`}
         className={`absolute z-10 transition-all duration-1000 ${scaleClass}`}
-        style={positionStyle}
+        style={{ ...positionStyle, opacity }}
       >
         <div 
           className="relative flex items-center justify-center shadow-2xl"
@@ -94,7 +171,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
             border: isActiveStep ? '3px solid rgba(255,215,0,0.6)' : '2px solid rgba(255,255,255,0.3)',
             borderRadius: '8px 24px 24px 8px', // Sol köşeler hafif, sağ köşeler yuvarlak
             boxShadow: isActiveStep 
-              ? '0 12px 35px rgba(139,92,246,0.6), inset 0 2px 10px rgba(255,255,255,0.4), 0 0 20px rgba(139,92,246,0.3)' 
+              ? `0 12px 35px ${lightColor}99, inset 0 2px 10px rgba(255,255,255,0.4), 0 0 20px ${lightColor}66` 
               : '0 6px 20px rgba(0,0,0,0.4), inset 0 1px 3px rgba(255,255,255,0.2)',
             transform: isActiveStep ? 'translateY(-2px)' : 'none',
             backdropFilter: 'blur(2px)'
@@ -137,8 +214,11 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
     
     if (!character || teamPosition <= 0) return null
 
-    // Find current step index
-    const stepIndex = LADDER_STEPS.findIndex(step => step === teamPosition)
+    // Her takım için ayrı visible steps al
+    const teamSteps = getVisibleStepsForTeam(team)
+    
+    // Find current step index in team's visible steps
+    const stepIndex = teamSteps.findIndex((step: number) => step === teamPosition)
     if (stepIndex === -1) return null
 
     const position = getStepPosition(stepIndex)
@@ -193,14 +273,14 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
         style={{ backgroundImage: 'url(/assets/background.png)' }}
       />
 
-      {/* Ladder Steps - Team A (Left side) */}
+      {/* Ladder Steps - Team A (Left side) - Her takımın kendi basamakları */}
       <div className="absolute inset-0">
-        {LADDER_STEPS.map((stepValue, index) => renderStepCloud(stepValue, index, "A"))}
+        {getVisibleStepsForTeam("A").map((stepValue: number, index: number) => renderStepCloud(stepValue, index, "A"))}
       </div>
 
-      {/* Ladder Steps - Team B (Right side) */}
+      {/* Ladder Steps - Team B (Right side) - Her takımın kendi basamakları */}
       <div className="absolute inset-0">
-        {LADDER_STEPS.map((stepValue, index) => renderStepCloud(stepValue, index, "B"))}
+        {getVisibleStepsForTeam("B").map((stepValue: number, index: number) => renderStepCloud(stepValue, index, "B"))}
       </div>
 
       {/* Team Characters */}

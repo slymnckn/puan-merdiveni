@@ -73,8 +73,8 @@ export default function QuestionReady({ gameState, onShowQuestion }: QuestionRea
                 alt="Team A Character"
                 className="h-10 w-10"
               />
-              <span className="text-white font-bold text-sm drop-shadow-lg">TAKIM A: {gameState.teams[0].name}</span>
-              <span className="text-white font-bold text-lg drop-shadow-lg">{gameState.teams[0].score}</span>
+              <span className="text-white font-bold text-sm drop-shadow-lg">TAKIM A</span>
+              <span className="text-white font-bold text-lg drop-shadow-lg">{gameState.teams[0].ladderPosition}</span>
             </div>
           </div>
 
@@ -87,8 +87,8 @@ export default function QuestionReady({ gameState, onShowQuestion }: QuestionRea
                 alt="Team B Character"
                 className="h-10 w-10"
               />
-              <span className="text-white font-bold text-sm drop-shadow-lg">TAKIM B: {gameState.teams[1].name}</span>
-              <span className="text-white font-bold text-lg drop-shadow-lg">{gameState.teams[1].score}</span>
+              <span className="text-white font-bold text-sm drop-shadow-lg">TAKIM B</span>
+              <span className="text-white font-bold text-lg drop-shadow-lg">{gameState.teams[1].ladderPosition}</span>
             </div>
           </div>
         </div>

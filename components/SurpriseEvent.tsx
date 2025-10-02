@@ -16,10 +16,38 @@ export default function SurpriseEvent({ gameState, onSurpriseComplete }: Surpris
   useEffect(() => {
     if (!gameState.surpriseData) return
     
-    const choices: SurpriseChoice[] = []
-    for (let i = 0; i < 3; i++) {
-      choices.push(selectSurpriseChoice())
-    }
+    const luckyNumber = gameState.surpriseData.luckyNumber
+    const halfLuckyNumber = Math.ceil(luckyNumber / 2) // Yarısı (yuvarlanmış)
+    
+    // Şanslı sayıya göre dinamik seçenekler oluştur
+    // Her zaman 3 farklı seçenek sun
+    const allPossibleChoices: SurpriseChoice[] = [
+      {
+        choice: `+${luckyNumber} kendi takımına`,
+        probability: 1,
+        effect: { type: 'gain', target: 'self', amount: luckyNumber }
+      },
+      {
+        choice: `-${luckyNumber} rakip takıma`,
+        probability: 1,
+        effect: { type: 'lose', target: 'opponent', amount: luckyNumber }
+      },
+      {
+        choice: `+${halfLuckyNumber} kendi takımına`,
+        probability: 1,
+        effect: { type: 'gain', target: 'self', amount: halfLuckyNumber }
+      },
+      {
+        choice: `-${halfLuckyNumber} rakip takıma`,
+        probability: 1,
+        effect: { type: 'lose', target: 'opponent', amount: halfLuckyNumber }
+      }
+    ]
+    
+    // Rastgele 3 seçenek seç (her zaman farklı olsun)
+    const shuffled = [...allPossibleChoices].sort(() => Math.random() - 0.5)
+    const choices = shuffled.slice(0, 3)
+    
     setAvailableChoices(choices)
   }, [gameState.surpriseData])
 

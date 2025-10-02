@@ -139,8 +139,6 @@ export const determineWinner = <T extends { id: 'A' | 'B'; ladderPosition: numbe
   if (aReached) return 'A'
   if (bReached) return 'B'
   
-  // No one reached target - higher position wins
-  if (teamA.ladderPosition > teamB.ladderPosition) return 'A'
-  if (teamB.ladderPosition > teamA.ladderPosition) return 'B'
+  // No one reached target yet - return 'tie' to continue game
   return 'tie'
 }
