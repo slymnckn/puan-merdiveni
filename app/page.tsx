@@ -497,7 +497,7 @@ export default function GameApp() {
               </div>
             </div>
 
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl px-8">
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-[60%] w-full max-w-4xl px-8">
               <div className="relative w-full">
                 <img src="/assets/soru-arkasi.png" alt="Question Background" className="w-full h-auto" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
@@ -600,10 +600,10 @@ export default function GameApp() {
               </div>
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-8 px-8 pb-6 z-20">
+            <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-8 px-8 pb-12 z-20">
               {/* Team A */}
               <div className="relative">
-                <img src="/assets/genel-buton.png" alt="Team A Score" className="h-16 w-auto min-w-[200px]" />
+                <img src="/assets/genel-buton.png" alt="Team A Score" className="h-20 w-auto min-w-[240px]" />
                 <div className="absolute inset-0 flex items-center justify-center gap-2">
                   <img
                     src={gameState.teams[0].character?.image || "/assets/hero-2.png"}
@@ -619,7 +619,7 @@ export default function GameApp() {
 
               {/* Team B */}
               <div className="relative">
-                <img src="/assets/genel-buton.png" alt="Team B Score" className="h-16 w-auto min-w-[200px]" />
+                <img src="/assets/genel-buton.png" alt="Team B Score" className="h-20 w-auto min-w-[240px]" />
                 <div className="absolute inset-0 flex items-center justify-center gap-2">
                   <img
                     src={gameState.teams[1].character?.image || "/assets/hero-1.png"}

@@ -54,17 +54,30 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
     const teamPosition = getTeamPosition(team)
     const isActiveStep = teamPosition === stepValue
     
-    // Team colors with proper brightness
-    const teamFilter = team === "A" 
-      ? "hue-rotate(200deg) saturate(1.8) brightness(1.1)" 
-      : "hue-rotate(320deg) saturate(1.8) brightness(1.1)"
-    
     const positionStyle = team === "A" 
       ? { bottom: `${position.bottom}%`, left: `${position.left}%` }
       : { bottom: `${position.bottom}%`, right: `${position.right}%` }
 
     // Scale active steps slightly larger
     const scaleClass = isActiveStep ? 'scale-110' : 'scale-100'
+    
+    // Basamaklı merdiven görünümü - görsel referansa göre
+    // Her basamak soldan sağa doğru uzanan dikdörtgen şeklinde
+    const totalSteps = LADDER_STEPS.length
+    const stepWidth = 180 + (stepIndex * 8) // Her basamak gittikçe genişler
+    const stepHeight = 45 // Sabit yükseklik
+    
+    // Renk gradientleri - mor ve pembe tonları (görsel referans) - OPAK VE BELİRGİN
+    const isPassed = teamPosition > stepValue
+    const baseColor = team === "A" ? "#5B21B6" : "#C026D3" // Daha koyu ve belirgin mor/pembe taban
+    const lightColor = team === "A" ? "#8B5CF6" : "#E879F9" // Daha belirgin açık ton
+    
+    // Gradient oluştur - tamamen opak
+    const gradientStyle = isActiveStep 
+      ? `linear-gradient(135deg, ${lightColor} 0%, ${baseColor} 100%)`
+      : isPassed 
+        ? `linear-gradient(135deg, ${lightColor} 0%, ${baseColor} 100%)` // Opak geçmiş basamaklar
+        : `linear-gradient(135deg, #7C3AED 0%, #4C1D95 100%)` // Opak pasif basamaklar (koyu mor)
 
     return (
       <div
@@ -72,16 +85,43 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
         className={`absolute z-10 transition-all duration-1000 ${scaleClass}`}
         style={positionStyle}
       >
-        <div className="relative w-24 h-16 md:w-28 md:h-18">
-          <img 
-            src="/assets/step.png" 
-            alt={`Step ${stepValue}`} 
-            className="w-full h-full object-contain drop-shadow-2xl" 
-            style={{ filter: teamFilter }}
+        <div 
+          className="relative flex items-center justify-center shadow-2xl"
+          style={{ 
+            width: `${stepWidth}px`, 
+            height: `${stepHeight}px`,
+            background: gradientStyle,
+            border: isActiveStep ? '3px solid rgba(255,215,0,0.6)' : '2px solid rgba(255,255,255,0.3)',
+            borderRadius: '8px 24px 24px 8px', // Sol köşeler hafif, sağ köşeler yuvarlak
+            boxShadow: isActiveStep 
+              ? '0 12px 35px rgba(139,92,246,0.6), inset 0 2px 10px rgba(255,255,255,0.4), 0 0 20px rgba(139,92,246,0.3)' 
+              : '0 6px 20px rgba(0,0,0,0.4), inset 0 1px 3px rgba(255,255,255,0.2)',
+            transform: isActiveStep ? 'translateY(-2px)' : 'none',
+            backdropFilter: 'blur(2px)'
+          }}
+        >
+          {/* Parlama efekti üst kısımda */}
+          <div 
+            className="absolute top-0 left-2 right-2 h-2 opacity-40"
+            style={{
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)',
+              borderRadius: '8px 24px 0 0'
+            }}
           />
+          
+          {/* Yıldız dekorasyonları (görseldeki gibi) */}
+          {isActiveStep && (
+            <>
+              <div className="absolute -left-3 top-1/4 text-yellow-300 text-sm animate-pulse drop-shadow-lg">✨</div>
+              <div className="absolute -left-3 bottom-1/4 text-yellow-300 text-sm animate-pulse delay-100 drop-shadow-lg">✨</div>
+              <div className="absolute left-1/4 -top-3 text-yellow-300 text-sm animate-pulse delay-200 drop-shadow-lg">✨</div>
+              <div className="absolute right-1/4 -top-3 text-yellow-300 text-xs animate-pulse delay-300 drop-shadow-lg">⭐</div>
+            </>
+          )}
+          
           <span 
-            className="absolute inset-0 flex items-center justify-center text-white font-bold text-base md:text-lg drop-shadow-lg" 
-            style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.9)' }}
+            className="text-white font-bold text-xl md:text-2xl drop-shadow-lg z-10" 
+            style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}
           >
             {stepValue}
           </span>
@@ -106,24 +146,39 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
       ? { bottom: `${position.bottom + 1}%`, left: `${position.left + 2}%` }
       : { bottom: `${position.bottom + 1}%`, right: `${position.right + 2}%` }
 
+    // Doğal glow renkleri - belli belirsiz
+    const glowColor = team === "A" ? 'rgba(59, 130, 246, 0.4)' : 'rgba(236, 72, 153, 0.4)'
+
     return (
       <div
         className={`absolute z-20 transition-all duration-1000 ${showAnimation ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
         style={positionStyle}
       >
-        <div className={`relative rounded-full border-4 ${
-          team === "A" ? 'border-blue-500 bg-blue-100' : 'border-pink-500 bg-pink-100'
-        } shadow-2xl p-1`}>
+        <div className="relative">
+          {/* Arka planda doğal glow efekti */}
+          <div 
+            className="absolute inset-0 -z-10 rounded-full blur-xl"
+            style={{
+              background: glowColor,
+              transform: 'scale(1.5)',
+              opacity: 0.6
+            }}
+          />
+          
           <img 
             src={character.image} 
             alt={character.name}
             className="w-14 h-14 md:w-16 md:h-16 rounded-full object-cover"
+            style={{
+              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
+            }}
           />
-          {/* Team indicator */}
-          <div className={`absolute -top-2 -right-2 w-6 h-6 md:w-7 md:h-7 rounded-full ${
+          
+          {/* Team indicator - küçük rozet */}
+          <div className={`absolute -top-1 -right-1 w-5 h-5 md:w-6 md:h-6 rounded-full ${
             team === "A" ? 'bg-blue-600' : 'bg-pink-600'
           } border-2 border-white flex items-center justify-center shadow-lg`}>
-            <span className="text-white font-bold text-xs md:text-sm">{team}</span>
+            <span className="text-white font-bold text-[10px] md:text-xs">{team}</span>
           </div>
         </div>
       </div>
@@ -166,8 +221,8 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
         </div>
       </div>
 
-      {/* Score Panel */}
-      <div className="absolute top-4 right-4 z-30">
+      {/* Score Panel - Ortada, Sonraki Soru butonunun üstünde */}
+      <div className="absolute bottom-32 md:bottom-36 left-1/2 transform -translate-x-1/2 z-30">
         <div className="relative inline-block">
           <img 
             src="/score-scroll.png" 
@@ -227,7 +282,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
 
       {/* Congratulations Banner */}
       {stepsGained > 0 && (
-        <div className="absolute top-1/4 md:top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40">
+        <div className="absolute top-4 md:top-6 left-1/2 transform -translate-x-1/2 z-40">
           <div className="relative inline-block animate-pulse">
             <img 
               src="/golden-banner.png" 
@@ -239,22 +294,6 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
                 TEBRİKLER! +{stepsGained} BASAMAK KAZANDINIZ!
               </h1>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Correct Answer Notification */}
-      {correctTeam && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40 animate-bounce">
-          <div className="relative inline-block">
-            <img 
-              src="/assets/correct-button.png" 
-              alt="Correct Answer"
-              className="w-48 md:w-64 lg:w-80 h-auto object-contain drop-shadow-2xl"
-            />
-            <p className="absolute inset-0 flex items-center justify-center text-white font-bold text-xs md:text-sm lg:text-base drop-shadow-lg px-2 md:px-4">
-              TAKIM {correctTeam} DOĞRU CEVAP VERDİ!
-            </p>
           </div>
         </div>
       )}

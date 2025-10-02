@@ -32,23 +32,23 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
         }}
       ></div>
 
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-8">
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 py-6">
         {/* Title */}
         <div className="relative mb-6">
-          <img src="/assets/soru-sayac-banneri.png" alt="Game Settings Title" className="h-16 w-auto" />
-          <div className="absolute inset-0 flex items-center justify-center">
+          <img src="/assets/soru-sayac-banneri.png" alt="Game Settings Title" className="h-18 w-auto" />
+          <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '-10px' }}>
             <span className="text-amber-900 font-bold text-base drop-shadow-sm">OYUN AYARLARI</span>
           </div>
         </div>
 
         {/* Settings Panel */}
-        <div className="relative mb-6">
-          <img src="/assets/soru-arkasi.png" alt="Settings Panel" className="w-full max-w-3xl h-auto" />
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 space-y-8">
+        <div className="relative mb-6 w-full max-w-3xl">
+          <img src="/assets/soru-arkasi.png" alt="Settings Panel" className="w-full h-auto" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 pt-12 space-y-5">
             {/* Question Count Selection */}
-            <div className="flex flex-col items-center space-y-4">
-              <h3 className="text-white font-bold text-lg drop-shadow-lg">SORU SAYISI</h3>
-              <div className="flex gap-4 justify-center">
+            <div className="flex flex-col items-center space-y-3">
+              <h3 className="text-white font-bold text-base drop-shadow-lg">SORU SAYISI</h3>
+              <div className="flex gap-3 justify-center flex-wrap">
                 {questionCounts.map((count) => (
                   <button
                     key={count}
@@ -60,7 +60,7 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
                     <img 
                       src={localSettings.questionCount === count ? "/assets/open-açık-butonu.png" : "/assets/soru-sayısı-butonu.png"} 
                       alt={`${count} Questions`} 
-                      className="w-14 h-14 object-contain"
+                      className="w-16 h-16 object-contain"
                     />
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-white font-bold text-base drop-shadow-lg">{count}</span>
@@ -71,9 +71,9 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
             </div>
 
             {/* Game Mode Selection */}
-            <div className="flex flex-col items-center space-y-4">
-              <h3 className="text-white font-bold text-lg drop-shadow-lg">OYUN MODU</h3>
-              <div className="flex gap-6 justify-center">
+            <div className="flex flex-col items-center space-y-3">
+              <h3 className="text-white font-bold text-base drop-shadow-lg">OYUN MODU</h3>
+              <div className="flex gap-4 justify-center">
                 <button
                   onClick={() => updateSetting("gameMode", "timed")}
                   className={`relative transition-transform hover:scale-105 ${
@@ -83,10 +83,10 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
                   <img 
                     src={localSettings.gameMode === "timed" ? "/assets/selected-süre.png" : "/assets/süreli-süresiz-butonu.png"} 
                     alt="Timed Mode" 
-                    className="h-10 w-auto min-w-[100px]" 
+                    className="h-12 w-auto min-w-[120px]" 
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-amber-900 font-bold text-xs drop-shadow-lg">SÜRELİ</span>
+                    <span className="text-amber-900 font-bold text-sm drop-shadow-sm">SÜRELİ</span>
                   </div>
                 </button>
 
@@ -99,19 +99,19 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
                   <img 
                     src={localSettings.gameMode === "untimed" ? "/assets/selected-süre.png" : "/assets/süreli-süresiz-butonu.png"} 
                     alt="Untimed Mode" 
-                    className="h-10 w-auto min-w-[100px]" 
+                    className="h-12 w-auto min-w-[120px]" 
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-amber-900 font-bold text-xs drop-shadow-lg">SÜRESİZ</span>
+                    <span className="text-amber-900 font-bold text-sm drop-shadow-sm">SÜRESİZ</span>
                   </div>
                 </button>
               </div>
             </div>
 
             {/* Surprise System Toggle */}
-            <div className="flex flex-col items-center space-y-4">
-              <h3 className="text-white font-bold text-lg drop-shadow-lg">SÜRPRİZ SİSTEMİ</h3>
-              <div className="flex gap-6 justify-center">
+            <div className="flex flex-col items-center space-y-3">
+              <h3 className="text-white font-bold text-base drop-shadow-lg">SÜRPRİZ SİSTEMİ</h3>
+              <div className="flex gap-4 justify-center">
                 <button
                   onClick={() => updateSetting("surpriseSystem", true)}
                   className={`relative transition-all hover:scale-110 ${
@@ -121,10 +121,10 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
                   <img 
                     src={localSettings.surpriseSystem ? "/assets/open-açık-butonu.png" : "/assets/soru-sayısı-butonu.png"} 
                     alt="Surprise System On" 
-                    className="w-14 h-14 object-contain"
+                    className="w-16 h-16 object-contain"
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-white font-bold text-xs drop-shadow-lg">AÇIK</span>
+                    <span className="text-white font-bold text-sm drop-shadow-lg">AÇIK</span>
                   </div>
                 </button>
 
@@ -137,10 +137,10 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
                   <img 
                     src={!localSettings.surpriseSystem ? "/assets/open-açık-butonu.png" : "/assets/soru-sayısı-butonu.png"} 
                     alt="Surprise System Off" 
-                    className="w-14 h-14 object-contain"
+                    className="w-16 h-16 object-contain"
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-white font-bold text-xs drop-shadow-lg">KAPALI</span>
+                    <span className="text-white font-bold text-sm drop-shadow-lg">KAPALI</span>
                   </div>
                 </button>
               </div>
@@ -149,10 +149,10 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
         </div>
 
         {/* Start Game Button */}
-        <button onClick={onStartGame} className="relative group transition-transform hover:scale-105 mt-4">
-          <img src="/assets/correct-button.png" alt="Start Game" className="h-16 w-auto min-w-[180px]" />
+        <button onClick={onStartGame} className="relative group transition-transform hover:scale-105">
+          <img src="/assets/correct-button.png" alt="Start Game" className="h-14 w-auto min-w-[160px]" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-white font-bold text-base drop-shadow-lg">OYUNA BAŞLA</span>
+            <span className="text-white font-bold text-sm drop-shadow-lg">OYUNA BAŞLA</span>
           </div>
         </button>
       </div>
