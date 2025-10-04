@@ -49,20 +49,20 @@ export default function TeamSelection({ teams, onTeamsUpdate, onContinue }: Team
         </div>
 
         {/* Team Selection Panels */}
-        <div className="flex gap-6 mb-6 max-w-6xl">
+        <div className="flex gap-8 mb-6 max-w-7xl">
           {localTeams.map((team) => (
             <div key={team.id} className="relative flex-1">
-              <img src="/assets/soru-arkasi.png" alt={`Team ${team.id} Panel`} className="w-full h-auto" />
-              <div className="absolute inset-0 flex flex-col items-center px-8 pt-[75px] pb-[60px]">
+              <img src="/assets/soru-arkasi.png" alt={`Team ${team.id} Panel`} className="w-full h-auto scale-105" />
+              <div className="absolute inset-0 flex flex-col items-center px-8 pt-[80px] pb-[65px] scale-105">
                 {/* Team Name Input */}
                 <div className="relative mb-2 flex-shrink-0">
-                  <img src="/assets/genel-buton.png" alt="Name Input" className="h-8 w-36" />
+                  <img src="/assets/genel-buton.png" alt="Name Input" className="h-8 w-38" />
                   <input
                     type="text"
                     value={team.name}
                     onChange={(e) => updateTeamName(team.id, e.target.value)}
                     placeholder={`TAKIM ${team.id}`}
-                    className="absolute inset-0 bg-transparent text-white font-bold text-center text-[10px] placeholder-white/70 outline-none"
+                    className="absolute inset-0 bg-transparent text-white font-bold text-center text-[11px] placeholder-white/70 outline-none"
                     maxLength={15}
                   />
                 </div>
@@ -71,28 +71,31 @@ export default function TeamSelection({ teams, onTeamsUpdate, onContinue }: Team
                 <div className="grid grid-cols-3 gap-x-16 gap-y-6 mb-3 flex-shrink-0">
                   {characters.map((character) => (
                     <div key={character.id} className="flex flex-col items-center gap-2">
-                      <div className="w-16 h-16">
+                      <div className="w-[68px] h-[68px]">
                         <button
                           onClick={() => updateTeamCharacter(team.id, character)}
-                          className={`relative w-full h-full rounded-full overflow-visible transition-colors ${
+                          className={`relative w-full h-full rounded-full overflow-hidden transition-colors ${
                             team.character?.id === character.id
                               ? "outline outline-[3px] outline-yellow-400 outline-offset-2"
                               : "outline outline-[1.5px] outline-white/50 outline-offset-0 hover:outline-yellow-300 hover:outline-offset-1"
                           }`}
+                          style={team.character?.id === character.id ? {
+                            filter: 'drop-shadow(0 0 8px rgba(250, 204, 21, 0.5)) drop-shadow(0 0 12px rgba(250, 204, 21, 0.3))'
+                          } : {}}
                           title={character.name}
                         >
                           <img
                             src={character.image || "/placeholder.svg"}
                             alt={character.name}
-                            className="w-full h-full object-cover rounded-full"
+                            className="w-full h-full object-contain p-1"
                           />
                           {team.character?.id === character.id && (
-                            <div className="absolute inset-0 bg-yellow-400/30 rounded-full pointer-events-none"></div>
+                            <div className="absolute inset-0 bg-yellow-400/20 rounded-full pointer-events-none"></div>
                           )}
                         </button>
                       </div>
                       {/* Her karakterin kendi ismi altında */}
-                      <span className="text-yellow-300 font-semibold text-[10px] drop-shadow-lg text-center leading-tight">
+                      <span className="text-yellow-300 font-semibold text-[11px] drop-shadow-lg text-center leading-tight">
                         {character.name}
                       </span>
                     </div>

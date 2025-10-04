@@ -187,23 +187,24 @@ User-Agent: WebGame/1.0
 
 ---
 
-### 4.2 ANA MENÜ EKRANI
+### 4.1 GİRİŞ EKRANI (MainMenu)
 **Layout:**
 - Fixed inset-0, h-screen, w-screen
-- Background: /assets/background.png (cover, center)
-- İçerik: Dikey ortalanmış (flex-col items-center justify-center)
+- Background: **/giris-ekrani.png** (özel giriş ekranı arkaplanı)
+- İçerik: Dikey düzen (flex-col items-center justify-center)
 
 **Bileşenler:**
-1. **Logo/Banner**
-   - Publisher logo veya placeholder
-   - max-w-md boyutunda
-   - mb-12 alt boşluk
+1. **Oyun Başlığı**
+   - Görsel: /assets/soru-sayac-banneri.png (h-20)
+   - Üzerinde iki satır metin:
+     - "Puan Merdiveni" (text-amber-900, font-bold, text-xl)
+     - "Dijital Bilgi Yarışması" (text-amber-800, font-semibold, text-sm)
+   - mb-12 (alt boşluk)
 
-2. **Başla Butonu**
-   - Görsel: /assets/genel-buton.png
-   - w-48 h-14
-   - Hover: scale-105 transform
-   - Üzerinde "BAŞLA" metni (text-white, font-bold, text-lg)
+2. **Oyuna Başla Butonu**
+   - Görsel: /assets/genel-buton.png (h-16, min-w-[200px])
+   - Üzerinde "OYUNA BAŞLA" metni
+   - hover:scale-105 efekti
 
 ---
 
@@ -222,16 +223,19 @@ User-Agent: WebGame/1.0
 
 2. **Takım Panelleri (2 adet yan yana)**
    - Panel görseli: /assets/soru-arkasi.png
-   - flex gap-6, max-w-6xl
+   - flex gap-8, max-w-7xl
+   - **Scale: 1.05x** (tüm panel %5 büyütüldü - oranı korundu)
    - Her panel:
+     - **Banner Scale:** scale-105
      - **Content Container:**
        - absolute inset-0 (panel üzerine yerleşir)
        - flex flex-col items-center (dikey düzen, ortala)
-       - pt-[75px] pb-[60px] px-8 (optimize edilmiş padding)
+       - pt-[80px] pb-[65px] px-8 (optimize edilmiş padding)
+       - **scale-105** (banner ile aynı oranda)
        - **ÖNEMLİ:** justify-center YOK - Yukarı kayma önlenir
      - Takım isim girişi:
-       - Görsel: /assets/genel-buton.png (h-8 w-36)
-       - Input: maxLength 15, text-center, text-[10px]
+       - Görsel: /assets/genel-buton.png (h-8 w-38)
+       - Input: maxLength 15, text-center, text-[11px]
        - mb-2 (alt boşluk)
        - flex-shrink-0
      - Karakter grid:
@@ -241,15 +245,19 @@ User-Agent: WebGame/1.0
        - flex-shrink-0
        - **Her karakter container:** 
          - `flex flex-col items-center gap-2` (dikey düzen)
-         - İçinde: buton (w-16 h-16) + isim
+         - İçinde: buton (w-[68px] h-[68px]) + isim
        - Karakter butonu: 
-         - w-16 h-16 (64x64px)
+         - w-[68px] h-[68px] (68x68px)
          - rounded-full
          - overflow-visible (outline için)
+         - object-contain p-1 (padding ile kesilme önlenir)
+         - **Glow Efekti:** Seçili karakterde hafif sarı glow
+           - filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.5))
+           - İkinci katman: drop-shadow(0 0 12px rgba(250, 204, 21, 0.3))
        - **Karakter ismi:**
          - **Her karakterin direkt altında** kendi ismi var
          - gap-2 ile butondan ayrılmış
-         - text-yellow-300, font-semibold, text-[10px], drop-shadow-lg
+         - text-yellow-300, font-semibold, text-[11px], drop-shadow-lg
          - text-center, leading-tight
          - Her karakter için her zaman görünür
        - **Outline (Layout Etkilemez):**
@@ -261,7 +269,7 @@ User-Agent: WebGame/1.0
        - **ÖNEMLİ:** 
          - Border YOK - Boyut değişikliğine sebep olur
          - Shadow YOK - Layout kaymasına sebep olur
-         - Scale YOK - Pozisyon kaymasına sebep olur
+         - Scale YOK (butonlarda) - Pozisyon kaymasına sebep olur
          - Sadece OUTLINE kullan - Layout'a etki etmez
          - Parent'ta justify-center YOK - İçerik değişince kayma olmaz
        - Transition: transition-colors (sadece renk)
@@ -271,12 +279,12 @@ User-Agent: WebGame/1.0
    - Aktif olma koşulu: Her iki takım da isim ve karakter seçmiş olmalı
 
 **Karakterler (6 adet):**
-- Zeka Ustası
-- Bilge Büyücü
-- Uzay Kaşifi
-- Hızlı Kedi
-- Tekno Robot
-- Minik Ejderha
+- Zeka Ustası (/hero/zeka-ustasi.png)
+- Hızlı Kedi (/hero/hizli-kedi.png)
+- Sihirbaz (/hero/sihirbaz.png)
+- Tekno Robot (/hero/tekno-robot.png)
+- Uzay Kaşifi (/hero/uzay-kasifi.png)
+- Minik Dinazor (/hero/minik-dinazor.png)
 
 ---
 
@@ -495,6 +503,13 @@ User-Agent: WebGame/1.0
   - Duration: 2s, ease-in-out, infinite
   - Sadece o anda hareket eden karakterde aktif
   - Diğer takımın karakteri statik
+
+**Karakter Boyutları:**
+- Mobil: w-16 h-16 (64px)
+- Desktop: w-20 h-20 (80px)
+- object-contain p-1 (padding ile kesilme önlenir)
+- Glow efekti: drop-shadow beyaz tonda
+- Rozet: w-6 h-6 (mobil), w-7 h-7 (desktop)
 
 **Dikey Pozisyon:**
 - Bottom: 10% ile 75% arası eşit dağıtılmış

@@ -248,14 +248,14 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
           <img 
             src={character.image} 
             alt={character.name}
-            className="w-14 h-14 md:w-16 md:h-16 rounded-full object-cover"
+            className="w-16 h-16 md:w-20 md:h-20 rounded-full object-contain p-1"
             style={{
-              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
+              filter: 'drop-shadow(0 0 6px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.2)) drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
             }}
           />
           
           {/* Team indicator - küçük rozet */}
-          <div className={`absolute -top-1 -right-1 w-5 h-5 md:w-6 md:h-6 rounded-full ${
+          <div className={`absolute -top-1 -right-1 w-6 h-6 md:w-7 md:h-7 rounded-full ${
             team === "A" ? 'bg-blue-600' : 'bg-pink-600'
           } border-2 border-white flex items-center justify-center shadow-lg`}>
             <span className="text-white font-bold text-[10px] md:text-xs">{team}</span>
@@ -342,7 +342,10 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
                           <img 
                             src={team?.character?.image || "/placeholder.svg"} 
                             alt={team?.character?.name || `Team ${id}`}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain p-0.5"
+                            style={{
+                              filter: 'drop-shadow(0 0 4px rgba(255, 255, 255, 0.3))'
+                            }}
                           />
                         </div>
                         <span className="text-amber-900 font-bold text-sm md:text-base">
