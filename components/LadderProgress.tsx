@@ -231,7 +231,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
 
     return (
       <div
-        className={`absolute z-20 transition-all duration-1000 ${showAnimation ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
+        className={`absolute z-20 transition-all duration-1000 ${showAnimation ? 'scale-100 opacity-100' : 'scale-0 opacity-0'} ${team === correctTeam ? 'animate-gentle-bounce' : ''}`}
         style={positionStyle}
       >
         <div className="relative">
@@ -295,7 +295,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
             alt="Question Counter"
             className="h-14 md:h-16 lg:h-20 w-auto object-contain drop-shadow-xl"
           />
-          <span className="absolute top-[28%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white font-bold text-sm md:text-base lg:text-lg drop-shadow-lg whitespace-nowrap">
+          <span className="absolute top-[35%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white font-bold text-base md:text-lg lg:text-xl drop-shadow-lg whitespace-nowrap">
             SORU {gameState.currentQuestion}/{gameState.totalQuestions}
           </span>
         </div>
@@ -319,38 +319,53 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
           {/* Score Content - positioned in the scroll body */}
           <div className="absolute top-[30%] left-0 right-0 flex flex-col items-center px-8 md:px-10 lg:px-12">
             <div className="space-y-2 md:space-y-3 w-full">
-              <div className="flex items-center justify-between gap-2 bg-white/10 rounded-lg px-2 py-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-blue-500 flex items-center justify-center border-2 border-blue-300 shadow-lg">
-                    <span className="text-white font-bold text-xs md:text-sm">A</span>
-                  </div>
-                  <span className="text-amber-900 font-bold text-sm md:text-base">
-                    {gameState.teams.find(t => t.id === "A")?.name || "TAKIM A"}
-                  </span>
-                </div>
-                <span className="text-amber-900 font-bold text-base md:text-lg bg-amber-100/80 px-2 py-0.5 rounded">
-                  {getTeamPosition("A")}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-2 bg-white/10 rounded-lg px-2 py-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-pink-500 flex items-center justify-center border-2 border-pink-300 shadow-lg">
-                    <span className="text-white font-bold text-xs md:text-sm">B</span>
-                  </div>
-                  <span className="text-amber-900 font-bold text-sm md:text-base">
-                    {gameState.teams.find(t => t.id === "B")?.name || "TAKIM B"}
-                  </span>
-                </div>
-                <span className="text-amber-900 font-bold text-base md:text-lg bg-amber-100/80 px-2 py-0.5 rounded">
-                  {getTeamPosition("B")}
-                </span>
-              </div>
+              {/* Sıralama: Lider üstte */}
+              {(() => {
+                const teamA = gameState.teams.find(t => t.id === "A")
+                const teamB = gameState.teams.find(t => t.id === "B")
+                const posA = getTeamPosition("A")
+                const posB = getTeamPosition("B")
+                const isALeader = posA > posB
+                const isTie = posA === posB
+                
+                const teams = isALeader 
+                  ? [{ team: teamA, pos: posA, id: "A" }, { team: teamB, pos: posB, id: "B" }]
+                  : [{ team: teamB, pos: posB, id: "B" }, { team: teamA, pos: posA, id: "A" }]
+                
+                return teams.map(({ team, pos, id }, index) => {
+                  const isLeader = index === 0 && !isTie
+                  return (
+                    <div key={id} className="flex items-center justify-between gap-2 bg-white/10 rounded-lg px-2 py-1">
+                      <div className="flex items-center gap-2">
+                        {/* Karakter görseli A/B harfi yerine */}
+                        <div className="w-8 h-8 md:w-9 md:h-9 rounded-full overflow-hidden border-2 border-white shadow-lg flex-shrink-0">
+                          <img 
+                            src={team?.character?.image || "/placeholder.svg"} 
+                            alt={team?.character?.name || `Team ${id}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <span className="text-amber-900 font-bold text-sm md:text-base">
+                          {team?.name || `TAKIM ${id}`}
+                        </span>
+                        {/* Taç - sadece lider varsa */}
+                        {isLeader && (
+                          <span className="text-xl md:text-2xl">👑</span>
+                        )}
+                      </div>
+                      <span className="text-amber-900 font-bold text-base md:text-lg bg-amber-100/80 px-2 py-0.5 rounded">
+                        {pos}
+                      </span>
+                    </div>
+                  )
+                })
+              })()}
             </div>
           </div>
           
-          {/* Target Score - positioned at the bottom in the yellow banner */}
+          {/* Target Score - positioned at the bottom - sadece text, banner yok */}
           <div className="absolute bottom-[8%] left-1/2 transform -translate-x-1/2">
-            <div className="flex items-center gap-1 bg-amber-100/60 px-3 py-1 rounded-full">
+            <div className="flex items-center gap-1">
               <span className="text-lg">🎯</span>
               <span className="text-amber-900 font-bold text-xs md:text-sm whitespace-nowrap">
                 HEDEF: {gameState.ladderTarget}
@@ -369,7 +384,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
               alt="Congratulations Banner"
               className="w-80 md:w-96 lg:w-[28rem] h-auto object-contain drop-shadow-2xl"
             />
-            <div className="absolute inset-0 flex items-center justify-center px-4 md:px-6">
+            <div className="absolute inset-0 flex items-center justify-center px-4 md:px-6" style={{ marginTop: '-8px' }}>
               <h1 className="text-sm md:text-base lg:text-lg font-bold text-white text-center drop-shadow-lg">
                 TEBRİKLER! +{stepsGained} BASAMAK KAZANDINIZ!
               </h1>

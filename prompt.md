@@ -1,268 +1,1166 @@
+# Puan Merdiveni - Oyun Uygulama Spesifikasyonu
+
+> **⚠️ ÖNEMLİ: PROMPT GÜNCELLEME POLİTİKASI**
+> 
+> Bu dosya, uygulamanın **TAM VE GÜNCEL** spesifikasyonudur.
+> 
+> **KURAL:** Her kod değişikliğinde, bileşen güncellemesinde, yeni özellik eklendiğinde veya mevcut özellik değiştirildiğinde, **MUTLAKA** bu prompt.md dosyası da güncellenmelidir.
+> 
+> **Güncelleme Gereken Durumlar:**
+> - Yeni ekran/bileşen eklendi → Bölüm 4'e ekle
+> - Layout/boyut değişti → İlgili ekran bölümünü güncelle
+> - Oyun mantığı değişti → Bölüm 5'i güncelle
+> - API değişti → Bölüm 2'yi güncelle
+> - Yeni veri yapısı → Bölüm 3'e ekle
+> - Stil/renk değişti → Bölüm 8'i güncelle
+> 
+> **Amaç:** Bu prompt ile uygulamayı sıfırdan yeniden oluşturabilmek.
+
+---
+
+## Genel Bakış
+İki takımın sırayla soruları cevaplayarak dijital bir merdivende yukarı tırmandığı interaktif bilgi yarışması oyunu.
+
+---
+
+## 1. TEKNOLOJI STACK
+
+### Framework & Kütüphaneler
+- **Next.js 14** (App Router)
+- **React 19**
+- **TypeScript 5**
+- **Tailwind CSS 4**
+- **Shadcn/ui** komponentleri
+
+### Font
+- **Baloo 2** (Google Fonts)
+- Weights: 400, 500, 600, 700, 800
+- Tüm metinlerde global olarak kullanılır
+
+### State Yönetimi
+- React useState/useEffect hooks
+- Global state için Context API veya Zustand
+
+### Code Quality & Formatting
+- **Prettier** (esbenp.prettier-vscode)
+- Format on save aktif
+- Tüm dosya tipleri için (TS, TSX, JSON, MD)
+- Tutarlı kod formatı
+
+---
+
+## 2. API ENTEGRASYONU
+
+### 2.1 Soru Endpoint
+```
+GET https://etkinlik.app/api/unity/question-groups/code/{CODE}
+```
+- `{CODE}` parametresi oyuna özel benzersiz kod (kategori, zorluk, etkinlik ID vb.)
+- Başarısız olursa placeholder sorular kullanılır
+
+### 2.2 Reklam Endpoint
+```
+GET https://etkinlik.app/api/unity/advertisements
+```
+**Response Format:**
+```json
+[
+  {
+    "id": 1,
+    "name": "Reklam Adı",
+    "file_url": "https://...",
+    "link_url": "https://...",
+    "duration_seconds": 10
+  }
+]
+```
+
+### 2.3 Publisher Logo Endpoint
+```
+GET https://etkinlik.app/api/publishers/{publisherId}
+```
+
+### 2.4 Callback Endpoint
+```
+POST https://etkinlik.app/api/jenkins/callback
+```
+- Oyun bitişi, hata raporları, istatistik gönderimleri için
+
+### 2.5 Headers
+```
+Accept: application/json
+User-Agent: WebGame/1.0
+```
+
+---
+
+## 3. VERI YAPILARI
+
+### 3.1 Soru Formatı (API'den Gelen)
+```typescript
 {
-  "title": "Puan Merdiveni",
-  "description": "İki takımın sırayla soruları cevaplayarak dijital bir merdivende yukarı çıktığı takım yarışması.",
-  "requirements": {
-    "api": {
-      "fetchQuestions": {
-        "url": "https://etkinlik.app/api/unity/question-groups/code/{CODE}",
-        "description": "{CODE}, oyuna özel benzersiz kodu temsil eder. Bu kod oyun kategorisi, zorluk seviyesi veya etkinlik ID’si olabilir."
-      },
-      "publisherLogo": "https://etkinlik.app/api/publishers/{publisherId}",
-      "advertisements": {
-        "url": "https://etkinlik.app/api/unity/advertisements",
-        "responseFormat": "Ad listesi döner. Her reklam nesnesi id, name, file_url, link_url, duration (saniye cinsinden) içerir."
-      },
-      "callback": {
-        "url": "https://etkinlik.app/api/jenkins/callback",
-        "purpose": "Oyun bitişi, hata raporu ve istatistik gönderimleri için kullanılacak."
-      },
-      "headers": {
-        "Accept": "application/json",
-        "User-Agent": "WebGame/1.0"
-      },
-      "errorHandling": "API başarısız olursa varsayılan placeholder sorular ve logolar devreye girer.",
-      "authentication": "Gerekirse Bearer Token veya API Key ile doğrulama.",
-      "rateLimiting": "Dakikada maksimum X istek sınırı, retry mekanizması ile desteklenir."
-    },
-    "gameData": {
-      "input": "/puan-merdiveni/questions/question.json",
-      "questionTypes": ["multiple_choice", "true_false", "classic"],
-      "questionFormatRaw": {
-        "id": "number",
-        "type": "multiple_choice | true_false | classic",
-        "question_text": "string",
-        "answers": [
-          { "answer_text": "string", "is_correct": "boolean" }
-        ],
-        "correctAnswerId": "number",
-        "publisher_id": "number",
-        "image_url": "optional string"
-      },
-      "questionFormatGame": {
-        "id": "number",
-        "type": "multiple_choice | true_false | classic",
-        "question_text": "string",
-        "options": {
-          "A": "string",
-          "B": "string",
-          "C": "string",
-          "D": "string"
-        },
-        "correct_answer": "A|B|C|D|true|false",
-        "publisher_id": "number",
-        "image_url": "optional string"
-      },
-      "logo": {
-        "default": "/puan-merdiveni/questions/logo.png",
-        "dynamic": "API’den publisherLogo endpointi ile alınabilir"
-      },
-      "advertisementFormat": {
-        "id": "number",
-        "name": "string",
-        "file_url": "string",
-        "link_url": "string",
-        "duration_seconds": "number"
-      },
-      "exampleQuestionJson": [
-        {
-          "id": 1,
-          "type": "multiple_choice",
-          "question_text": "Türkiye’nin başkenti neresidir?",
-          "answers": [
-            { "answer_text": "Ankara", "is_correct": true },
-            { "answer_text": "İstanbul", "is_correct": false },
-            { "answer_text": "İzmir", "is_correct": false },
-            { "answer_text": "Bursa", "is_correct": false }
-          ],
-          "correctAnswerId": 1,
-          "publisher_id": 101,
-          "image_url": null
-        },
-        {
-          "id": 2,
-          "type": "true_false",
-          "question_text": "Dünya düzdür.",
-          "answers": [
-            { "answer_text": "Doğru", "is_correct": false },
-            { "answer_text": "Yanlış", "is_correct": true }
-          ],
-          "correctAnswerId": 2,
-          "publisher_id": 101,
-          "image_url": null
-        },
-        {
-          "id": 3,
-          "type": "classic",
-          "question_text": "Newton’un ünlü hareket yasaları hangi kitapta yayımlandı?",
-          "answers": [
-            { "answer_text": "Principia Mathematica", "is_correct": true }
-          ],
-          "correctAnswerId": 1,
-          "publisher_id": 101,
-          "image_url": null
-        }
-      ]
-    },
-    "teams": {
-      "count": 2,
-      "characterSelection": true,
-      "characters": [
-        "Zeka Ustası",
-        "Bilge Büyücü",
-        "Uzay Kaşifi",
-        "Hızlı Kedi",
-        "Tekno Robot",
-        "Minik Ejderha"
-      ],
-      "characterAssets": "placeholder images in /public/assets/characters",
-      "characterAbilities": "YOK – sadece görsel temsil"
-    },
-    "settings": {
-      "questionCountOptions": [10, 20, 30, 40],
-      "ladderTargets": {
-        "10": 25,
-        "20": 50,
-        "30": 75,
-        "40": 100
-      },
-      "modes": {
-        "timed": {
-          "0-10": "+3",
-          "11-20": "+2",
-          "21-30": "+1",
-          "onTimeout": "Cevaplanmamış → yanlış kabul edilir"
-        },
-        "untimed": {
-          "correctAnswer": "+1"
-        }
-      },
-      "surpriseSystem": {
-        "enabled": true,
-        "trigger": "Her 3 soruda bir tetiklenir",
-        "luckyNumber": "1-6 arası rastgele zar atılır",
-        "choices": "Şanslı sayıya göre dinamik oluşturulur",
-        "exampleChoices": [
-          "Şanslı sayı 6 ise: +6 kendi takımına, -6 rakip takıma, +3 kendi takımına, -3 rakip takıma",
-          "Şanslı sayı 3 ise: +3 kendi takımına, -3 rakip takıma, +2 kendi takımına (yarısı), -2 rakip takıma",
-          "Her turda rastgele 3 farklı seçenek sunulur"
-        ]
-      }
-    },
-    "ui": {
-      "screens": {
-        "advertisement": [
-          "Tam ekran reklam görseli (file_url)",
-          "Reklam süresi duration_seconds ile belirlenir",
-          "Sağ üstte geri sayım sayacı",
-          "Süre bitince sayaç yerine X butonu çıkar",
-          "X butonuna basılınca reklam kapanır ve oyun başlar",
-          "Tıklanabilir → link_url yeni sekmede açılır",
-          "Reklam sadece oyun başlamadan önce bir kere gösterilir"
-        ],
-        "start": [
-          "Placeholder logo veya publisher logoları",
-          "Takım isim ve karakter seçimi",
-          "Başla butonu"
-        ],
-        "settings": [
-          "Soru sayısı dropdown",
-          "Oyun modu (Süreli/Süresiz) toggle",
-          "Sürpriz sistemi checkbox"
-        ],
-        "questionReady": [
-          "Soruyu Göster butonu",
-          "Süre sayacı (süreli modda aktif)"
-        ],
-        "questionActive": [
-          "Soru metni",
-          "Multiple Choice: A-D cevap butonları, seçilen cevap doğru/yanlış kontrolü yapılır",
-          "True/False: Doğru/Yanlış butonları, seçilen cevap API'den gelen correct_answer ile karşılaştırılır (true/false string değerleri)",
-          "Classic: İlk aşamada 'Cevabı Göster' butonu → Basılınca cevap gösterilir ve 'Doğru Bildi' / 'Yanlış Bildi' butonları çıkar",
-          "Classic tipte: Doğru Bildi → puan ekle, Yanlış Bildi → puan ekleme",
-          "Opsiyonel soru görseli",
-          "Publisher logo üst kısımda",
-          "ÖNEMLİ: True/False sorularda correct_answer 'true' veya 'false' string olarak gelir, boolean olarak değerlendirilmeli"
-        ],
-        "ladder": [
-          "Her takım için bağımsız sliding window merdiven sistemi",
-          "Ekranda her zaman 10 basamak görünür",
-          "Başlangıç: 1-10 arası basamaklar gösterilir",
-          "İlerleme: Karakter ilerledikçe window kayar (örn: 8-17, 15-24, vs.)",
-          "Her 10 basamakta renk değişimi (tier sistemi)",
-          "Takım A renkleri: Mor(1-10) → Mavi(11-20) → Turkuaz(21-30) → Yeşil(31-40) → Sarı(41-50) → Altın(51+)",
-          "Takım B renkleri: Pembe(1-10) → Pembe-Kırmızı(11-20) → Turuncu(21-30) → Turuncu-Sarı(31-40) → Sarı(41-50) → Altın(51+)",
-          "Her takımın karakteri her zaman görünür durumda",
-          "Opacity ile geçişler: Aktif basamak (100%), Geçilmiş (90%), Henüz gelinmemiş (30%)"
-        ],
-        "surprise": [
-          "Seçim ekranı: + veya - basamak ekle/çıkar",
-          "Sıra pas geç opsiyonu"
-        ],
-        "end": [
-          "Kazanan takım bannerı",
-          "Beraberlik mesajı"
-        ]
-      },
-      "assetFolders": {
-        "backgrounds": "/public/assets/backgrounds",
-        "buttons": "/public/assets/buttons",
-        "icons": "/public/assets/icons",
-        "characters": "/public/assets/characters",
-        "ladder": "/public/assets/ladder",
-        "ads": "/public/assets/ads"
-      },
-      "placeholders": {
-        "style": "Basit ikon tarzı, tek renkli veya outline",
-        "size": "256x256 px önerilir",
-        "note": "Tüm görsellerde varsayılan anlaşılır placeholder’lar kullanılsın"
-      }
-    },
-    "gameplay": {
-      "flow": [
-        "Reklam ekranı (duration_seconds boyunca)",
-        "Giriş ekranı",
-        "Ayarlar ekranı",
-        "Soru hazır ekranı",
-        "Soru aktif ekranı",
-        "Merdiven animasyonu",
-        "Sürpriz ekranı (opsiyonel)",
-        "Sonraki soru",
-        "Oyun sonu"
-      ],
-      "endConditions": [
-        "Hedef basamağa ulaşma (birisi hedefe ulaşırsa oyun biter)",
-        "Sorular bittiğinde en yüksekte olan kazanır",
-        "Eşitse beraberlik",
-        "ÖNEMLİ: Oyun SADECE şu durumlarda biter:",
-        "  1. Bir takım hedef basamağa ulaştıysa (winner !== 'tie')",
-        "  2. VEYA tüm sorular bittiğinde (currentQuestion >= totalQuestions)",
-        "Sürpriz olayından sonra oyun sadece yukarıdaki koşullar sağlanıyorsa biter",
-        "Sorular bitmeden veya hedefe ulaşılmadan oyun bitmemeli",
-        "Sorular biterse ve yeterli soru yoksa, placeholder sorular eklenmeli"
-      ],
-      "questionHandling": [
-        "API'den gelen sorular öncelikli olarak kullanılır",
-        "Soru sayısı yetersizse, data/questions.ts dosyasından placeholder sorular eklenir",
-        "Oyun ayarlarında seçilen soru sayısı kadar soru garanti edilmelidir",
-        "Soru biterse oyun sonlandırılmaz, eksik sorular doldurulur"
-      ]
-    },
-    "implementation": {
-      "technology": "Next.js 14 (App Router) + React 19 + TypeScript 5 + Tailwind CSS 4",
-      "stateManagement": "Zustand veya Context API ile GameContext",
-      "errorHandling": "API, veri ve UI hatalarına karşı fallback",
-      "networking": "API çağrıları fetch ile yapılır, hata durumunda retry mekanizması",
-      "accessibility": {
-        "standard": "WCAG 2.1 AA",
-        "features": "Ekran okuyucu uyumluluğu, klavye navigasyonu, renk körlüğü desteği"
-      },
-      "testing": "Unit test (Jest), component test (React Testing Library), e2e test (Playwright)"
-    },
-    "output": {
-      "buildFolder": "/puan-merdiveni",
-      "readFrom": "/puan-merdiveni/questions/question.json",
-      "assetsReplaceable": true
-    }
-  },
-  "note": "Oyun asset bağımlı olmadan çalışsın. Placeholder görseller sayesinde assetler yüklenmese bile tüm UI ve oyun akışı görsel olarak anlaşılır olsun. Reklam sadece oyun başlamadan önce duration_seconds süresince gösterilsin, süre bitince X butonu ile kapanıp oyuna geçilsin."
+  id: number
+  type: "multiple_choice" | "true_false" | "classic"
+  question_text: string
+  answers: [
+    { answer_text: string, is_correct: boolean }
+  ]
+  correctAnswerId: number
+  publisher_id: number
+  image_url?: string
 }
+```
+
+### 3.2 Oyun İçi Soru Formatı (Dönüştürülmüş)
+```typescript
+{
+  id: number
+  type: "multiple_choice" | "true_false" | "classic"
+  question_text: string
+  options?: {
+    A: string
+    B: string
+    C?: string
+    D?: string
+  }
+  correct_answer: "A" | "B" | "C" | "D" | "true" | "false"
+  publisher_id: number
+  image_url?: string
+}
+```
+
+### 3.3 Takım Yapısı
+```typescript
+{
+  id: "A" | "B"
+  name: string
+  character: {
+    id: string
+    name: string
+    image: string
+  } | null
+  score: number          // Doğru cevap sayısı
+  ladderPosition: number // Merdivende kaçıncı basamakta
+}
+```
+
+### 3.4 Oyun Ayarları
+```typescript
+{
+  questionCount: 10 | 20 | 30 | 40
+  gameMode: "timed" | "untimed"
+  surpriseSystem: boolean
+  gameCode?: string
+}
+```
+
+### 3.5 Hedef Basamaklar
+```
+10 soru  → 25 basamak
+20 soru  → 50 basamak
+30 soru  → 75 basamak
+40 soru  → 100 basamak
+```
+
+---
+
+## 4. EKRANLAR VE BOYUTLAR
+
+### 4.1 REKLAM EKRANI
+**Gösterim Zamanı:** Oyun başlamadan önce bir kez
+
+**Layout:**
+- Tam ekran (fixed inset-0)
+- Background: /assets/background.png (cover, center)
+- Reklam görseli: API'den gelen file_url (tam ekran, object-cover)
+
+**Bileşenler:**
+- Reklam görseli (tıklanabilir → link_url yeni sekmede açılır)
+- Sağ üst köşe: Geri sayım sayacı
+  - Süre: API'den gelen duration_seconds
+  - Süre bitince → X butonu görünür
+  - X butonuna tıklayınca → Ana menü ekranı
+
+**Boyutlar:**
+- Geri sayım sayacı: w-16 h-16, bg-black/60, text-white, text-sm
+- X butonu: w-10 h-10, bg-red-600, hover:bg-red-700
+
+---
+
+### 4.2 ANA MENÜ EKRANI
+**Layout:**
+- Fixed inset-0, h-screen, w-screen
+- Background: /assets/background.png (cover, center)
+- İçerik: Dikey ortalanmış (flex-col items-center justify-center)
+
+**Bileşenler:**
+1. **Logo/Banner**
+   - Publisher logo veya placeholder
+   - max-w-md boyutunda
+   - mb-12 alt boşluk
+
+2. **Başla Butonu**
+   - Görsel: /assets/genel-buton.png
+   - w-48 h-14
+   - Hover: scale-105 transform
+   - Üzerinde "BAŞLA" metni (text-white, font-bold, text-lg)
+
+---
+
+### 4.3 TAKIM SEÇİMİ EKRANI
+**Layout:**
+- Fixed inset-0, h-screen, w-screen
+- Background: /assets/background.png
+- İçerik: Dikey düzen (flex-col items-center justify-center)
+
+**Bileşenler:**
+1. **Başlık Banner**
+   - Görsel: /assets/soru-sayac-banneri.png
+   - h-20 w-auto
+   - Üzerinde "TAKIM & KARAKTER SEÇİMİ" (text-amber-900, font-bold, text-xl)
+   - marginTop: -12px (fine-tune positioning)
+
+2. **Takım Panelleri (2 adet yan yana)**
+   - Panel görseli: /assets/soru-arkasi.png
+   - flex gap-6, max-w-6xl
+   - Her panel:
+     - **Content Container:**
+       - absolute inset-0 (panel üzerine yerleşir)
+       - flex flex-col items-center (dikey düzen, ortala)
+       - pt-[75px] pb-[60px] px-8 (optimize edilmiş padding)
+       - **ÖNEMLİ:** justify-center YOK - Yukarı kayma önlenir
+     - Takım isim girişi:
+       - Görsel: /assets/genel-buton.png (h-8 w-36)
+       - Input: maxLength 15, text-center, text-[10px]
+       - mb-2 (alt boşluk)
+       - flex-shrink-0
+     - Karakter grid:
+       - **3 sütun x 2 satır** (6 karakter)
+       - gap-x-16 gap-y-6 (yatay 64px, dikey 24px)
+       - mb-3 (alt boşluk)
+       - flex-shrink-0
+       - **Her karakter container:** 
+         - `flex flex-col items-center gap-2` (dikey düzen)
+         - İçinde: buton (w-16 h-16) + isim
+       - Karakter butonu: 
+         - w-16 h-16 (64x64px)
+         - rounded-full
+         - overflow-visible (outline için)
+       - **Karakter ismi:**
+         - **Her karakterin direkt altında** kendi ismi var
+         - gap-2 ile butondan ayrılmış
+         - text-yellow-300, font-semibold, text-[10px], drop-shadow-lg
+         - text-center, leading-tight
+         - Her karakter için her zaman görünür
+       - **Outline (Layout Etkilemez):**
+         - Seçili: outline outline-[3px] outline-yellow-400 outline-offset-2
+         - Seçili değil: outline outline-[1.5px] outline-white/50 outline-offset-0
+         - Hover: outline-yellow-300 outline-offset-1
+       - **Overlay:**
+         - Seçili: bg-yellow-400/30 rounded-full
+       - **ÖNEMLİ:** 
+         - Border YOK - Boyut değişikliğine sebep olur
+         - Shadow YOK - Layout kaymasına sebep olur
+         - Scale YOK - Pozisyon kaymasına sebep olur
+         - Sadece OUTLINE kullan - Layout'a etki etmez
+         - Parent'ta justify-center YOK - İçerik değişince kayma olmaz
+       - Transition: transition-colors (sadece renk)
+
+3. **Devam Et Butonu**
+   - Görsel: /assets/genel-buton.png (w-40 h-12)
+   - Aktif olma koşulu: Her iki takım da isim ve karakter seçmiş olmalı
+
+**Karakterler (6 adet):**
+- Zeka Ustası
+- Bilge Büyücü
+- Uzay Kaşifi
+- Hızlı Kedi
+- Tekno Robot
+- Minik Ejderha
+
+---
+
+### 4.4 OYUN AYARLARI EKRANI
+**Layout:**
+- Fixed inset-0, h-screen, w-screen
+- Background: /assets/background.png
+- İçerik: Dikey ortalanmış
+
+**Bileşenler:**
+1. **Başlık Banner**
+   - Görsel: /assets/soru-sayac-banneri.png (h-18)
+   - Üzerinde "OYUN AYARLARI"
+
+2. **Ayarlar Paneli**
+   - Panel görseli: /assets/soru-arkasi.png
+   - max-w-3xl
+   - İçerik: space-y-5
+
+   **a) Soru Sayısı Seçimi**
+   - Başlık: "SORU SAYISI" (text-white, font-bold, text-base)
+   - 4 buton: 10, 20, 30, 40
+   - Buton görselleri:
+     - Seçili: /assets/open-açık-butonu.png
+     - Seçili değil: /assets/soru-sayısı-butonu.png
+   - Boyut: w-16 h-16
+   - Hover: scale-110
+
+   **b) Oyun Modu**
+   - Başlık: "OYUN MODU"
+   - 2 buton: Süreli / Süresiz
+   - Buton görselleri:
+     - Seçili: /assets/selected-süre.png
+     - Seçili değil: /assets/süreli-süresiz-butonu.png
+   - Boyut: h-12, min-w-[120px]
+   - Üzerinde metin: text-amber-900, font-bold, text-sm
+
+   **c) Sürpriz Sistemi**
+   - Başlık: "SÜRPRİZ SİSTEMİ"
+   - Toggle checkbox
+   - Açıklama metni: text-white/80, text-xs
+
+3. **Oyunu Başlat Butonu**
+   - Görsel: /assets/genel-buton.png (w-48 h-14)
+   - Üzerinde "OYUNU BAŞLAT"
+
+---
+
+### 4.5 SORU HAZIR EKRANI
+**Layout:**
+- Fixed inset-0, h-screen, w-screen
+- Background: /assets/background.png
+
+**Bileşenler:**
+1. **Üst Kısım**
+   - Publisher logo (opsiyonel)
+   - Soru sayacı banner: /assets/soru-sayac-banneri.png (h-16)
+   - Üzerinde "SORU X / Y" metni
+
+2. **Orta Kısım**
+   - Büyük "SORUYU GÖSTER" butonu
+   - w-48 h-48 rounded-full gradient button
+   - animate-pulse efekti
+
+3. **Alt Kısım**
+   - Takım skorları ve aktif takım göstergesi
+   - **Aktif Takım İndikatörü:**
+     - Sırası gelen takım: /assets/correct-button.png (yeşil banner)
+     - Diğer takım: /assets/genel-buton.png (mor banner)
+     - Aktif takım: animate-gentle-bounce animasyonu
+     - Yeşil glow efekti: drop-shadow-[0_0_15px_rgba(34,197,94,0.7)]
+   - Her takım: h-20, min-w-[240px]
+   - Karakter görseli (w-10 h-10) + İsim + Skor
+
+---
+
+### 4.6 SORU AKTİF EKRANI
+**Layout:**
+- Fixed inset-0, h-screen, w-screen
+- Background: /assets/background.png
+- Üç kolonlu düzen:
+  - Sol: Takım A bilgisi (flex-1)
+  - Orta: Soru ve cevaplar (flex-[2])
+  - Sağ: Takım B bilgisi (flex-1)
+
+**Bileşenler:**
+
+1. **Üst Kısım**
+   - Publisher logo
+   - Soru sayacı banner
+   - Süre sayacı (süreli modda)
+
+2. **Soru Alanı (Orta)**
+   - Soru panel: /assets/soru-arkasi.png
+   - Soru metni:
+     - text-white, text-lg (18px)
+     - font-bold, text-center
+     - paddingTop: 80px (yukarıdan boşluk)
+   - Soru görseli (opsiyonel): max-h-32, w-48
+
+3. **Cevap Butonları**
+   
+   **Multiple Choice (4 şık):**
+   - Grid: 2x2 düzen (grid-cols-2)
+   - gap-4
+   - Her buton:
+     - Görsel: /assets/genel-buton.png (h-14, min-w-[200px])
+     - Seçili doğru: /assets/correct-button.png
+     - Seçili yanlış: /assets/wrong-button.png
+     - Hover: scale-105
+     - Üzerinde şık metni: text-sm
+
+   **True/False (2 şık):**
+   - Dikey düzen (flex-col)
+   - gap-4
+   - Buton boyutları aynı
+
+   **Classic (Manuel değerlendirme):**
+   - İlk aşama: "CEVABI GÖSTER" butonu
+   - İkinci aşama (cevap gösterildi):
+     - **Cevap başlığı:**
+       - "CEVAP:" (text-xl, font-bold, text-yellow-300, mb-3)
+       - Ortalanmış, üstte
+     - **Cevap metni:**
+       - text-2xl, font-bold, text-white
+       - drop-shadow-lg
+       - Direkt soru altında, banner/kutu YOK
+       - **ÖNEMLİ:** Cevap butona basıldıktan sonra da KALIR
+     - **Değerlendirme butonları (sadece cevap verilmeden önce):**
+       - 2 buton: "✅ Doğru Bildi" / "❌ Yanlış Bildi"
+       - Grid: 2 sütun, gap-4
+       - Görsel: /assets/correct-button.png ve /assets/wrong-button.png
+       - Butona basıldıktan sonra butonlar gizlenir ama cevap görünür kalır
+     - Spacing: space-y-6 (cevap ve butonlar arası)
+
+4. **DEVAM ET Butonu**
+   - Cevap verildikten SONRA görünür
+   - Sağ tarafta sabit pozisyon (fixed right-8)
+   - Görsel: /assets/devam-et.png
+   - Küçük boyut: w-24 h-10
+   - Hover: scale-110, parlama efekti
+   - **ÖNEMLİ:** Otomatik geçiş YOK, kullanıcı bu butona basmalı
+
+5. **Alt Paneller (Takım Bilgileri)**
+   - Ekranın altında, 2 takım yan yana
+   - Her takım banner:
+     - h-20, min-w-[240px]
+     - **Sırası olan takım:** 
+       - /assets/correct-button.png (yeşil)
+       - Çok hafif bounce animasyonu: `animate-gentle-bounce`
+         - Custom keyframe: translateY(0) → translateY(-5px) → translateY(0)
+         - Duration: 2s, ease-in-out, infinite
+       - Yeşil glow efekti: `drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]`
+     - **Sırası olmayan takım:** /assets/genel-buton.png (mor)
+     - Dinamik: currentTurn === 'A' ? yeşil + efektler : mor
+   - İçerik: Karakter görseli (h-10 w-10) + Takım adı + Basamak sayısı
+   - Gap: gap-8
+
+**Önemli Notlar:**
+- True/False sorularda correct_answer "true" veya "false" string olarak gelir
+- Cevap kontrolü: answer seçimi === correct_answer
+
+---
+
+### 4.7 MERDİVEN İLERLEME EKRANI
+**Layout:**
+- Fixed inset-0, h-screen, w-screen
+- Background: /assets/background.png
+- İki bağımsız merdiven: Sol (Takım A), Sağ (Takım B)
+
+**Sliding Window Sistemi:**
+- **Ekranda görünen basamak sayısı:** 10 (sabit)
+- **Başlangıç:** 1-10 arası basamaklar gösterilir
+- **İlerleme:** Karakter ilerledikçe window kayar
+  - Örnek: Karakter 15. basamaktaysa → 12-21 arası gösterilir
+  - Window start = max(1, position - 3)
+
+**Basamak Boyutları:**
+- Width: 180px + (stepIndex * 8) [her basamak gittikçe genişler]
+- Height: 45px (sabit)
+- Border-radius: 8px 24px 24px 8px (sol köşeler hafif, sağ köşeler yuvarlak)
+- Box-shadow: Aktif basamakta daha belirgin
+- Border: Aktif → 3px solid rgba(255,215,0,0.6), diğerleri → 2px solid rgba(255,255,255,0.3)
+
+**Renk Paletleri (Her 10 basamakta bir değişir):**
+
+**Takım A:**
+1. Mor (1-10): #5B21B6 → #8B5CF6
+2. Mavi (11-20): #1E40AF → #3B82F6
+3. Turkuaz (21-30): #0F766E → #14B8A6
+4. Yeşil (31-40): #15803D → #22C55E
+5. Sarı (41-50): #CA8A04 → #EAB308
+6. Altın (51+): #B45309 → #F59E0B
+
+**Takım B:**
+1. Pembe (1-10): #C026D3 → #E879F9
+2. Pembe-Kırmızı (11-20): #BE123C → #FB7185
+3. Turuncu (21-30): #C2410C → #FB923C
+4. Turuncu-Sarı (31-40): #CA8A04 → #FBBF24
+5. Sarı (41-50): #A16207 → #FDE047
+6. Altın (51+): #B45309 → #F59E0B
+
+**Opacity Kontrolleri:**
+- Aktif basamak (karakter üzerinde): 1 (100%)
+- Geçilmiş basamaklar: 0.9 (90%)
+- Henüz gelinmemiş: 0.3 (30%)
+
+**Karakter Gösterimi:**
+- Aktif basamak üzerinde karakter görseli
+- Rounded-full, border
+- Her zaman görünür
+- Aktif basamakta yıldız efektleri (✨⭐)
+- **Animasyon (doğru cevap veren takım):**
+  - `animate-gentle-bounce` class'ı eklenir
+  - Hafif yukarı-aşağı hareket (translateY: 0 → -5px → 0)
+  - Duration: 2s, ease-in-out, infinite
+  - Sadece o anda hareket eden karakterde aktif
+  - Diğer takımın karakteri statik
+
+**Dikey Pozisyon:**
+- Bottom: 10% ile 75% arası eşit dağıtılmış
+- Her basamak arası spacing: 65 / 9 ≈ 7.2%
+
+**Yatay Pozisyon:**
+- Takım A: left başlangıç 8%, her basamakta +3% merkeze doğru
+- Takım B: right başlangıç 8%, her basamakta +3% merkeze doğru
+
+**Soru Sayacı (Sol üst):**
+- Görsel: /assets/soru-sayac-banneri.png (h-14~20)
+- Position: top-4 left-4, z-30
+- Text: "SORU X/Y"
+  - Position: top-[35%] (aşağı indirildi)
+  - Font: text-base~xl (büyütüldü), font-bold, text-white
+  - drop-shadow-lg
+
+**Tebrikler Banner'ı (Üstte, ortada):**
+- Görsel: /golden-banner.png
+- Position: top-4, ortalanmış, z-40
+- Animasyon: animate-pulse
+- Text: "TEBRİKLER! +X BASAMAK KAZANDINIZ!"
+  - marginTop: -8px (yukarı taşındı)
+  - Font: text-sm~lg, font-bold, text-white
+  - Sadece stepsGained > 0 ise gösterilir
+
+**Skor Paneli (Ortada):**
+- Görsel: /score-scroll.png (pergel şeklinde)
+- Position: bottom-32, ortalanmış, z-30
+- **Başlık:** "SKOR" (top-[2%], text-amber-900, font-bold)
+- **İçerik (top-[30%]):**
+  - 2 takım satırı (space-y-2)
+  - **Sıralama:** Lider üstte! (pozisyona göre dinamik sıralama)
+  - Her satır:
+    - Karakter görseli (w-8 h-8, rounded-full) - A/B harfi yerine ✅
+    - Takım adı (text-amber-900, font-bold, text-sm)
+    - Taç emoji (👑) - Sadece lider varsa (beraberlikte yok) ✅
+    - Puan (text-amber-900, font-bold, bg-amber-100/80)
+  - bg-white/10, rounded-lg, px-2 py-1
+- **Hedef (bottom-[8%]):**
+  - "🎯 HEDEF: X" (text-amber-900, font-bold)
+  - Banner YOK - Sadece text ✅
+  - Ortalanmış
+
+**Devam Et Butonu:**
+- Alt kısımda ortalanmış
+- w-40 h-12
+- 2 saniye sonra otomatik tıklanabilir
+
+---
+
+### 4.8 SÜRPRİZ OLAYI EKRANI
+**Tetiklenme:** Her 3 soruda bir (3, 6, 9, 12...)
+
+**Layout:**
+- Fixed inset-0, h-screen, w-screen
+- Background: /assets/background.png
+
+**Bileşenler:**
+
+1. **Başlık**
+   - Görsel: /assets/soru-sayac-banneri.png (h-16, max-w-[350px])
+   - Üzerinde "🎉 SÜRPRİZ ZAMANI! 🎉" (text-xl, font-bold, text-purple-900)
+   - marginTop: -8px (text yukarı kaydırıldı)
+
+2. **Takım ve Şanslı Sayı Bilgisi**
+   - Container: bg-purple-900/90, rounded-lg, px-8 py-4
+   - Border: border-2 border-yellow-400
+   - Başlık: "[Takım A/B] seçim yapıyor" (text-xl, font-bold, text-white)
+   - Alt: "Şanslı sayı: X" (text-lg, font-semibold, text-yellow-300)
+
+3. **"Bir seçenek seçin:" Başlığı**
+   - text-2xl, font-bold, text-white
+   - bg-purple-900/70, backdrop-blur-sm
+   - py-4 px-8, rounded-lg
+   - border-2 border-yellow-400
+   - mb-6
+
+4. **Seçenek Butonları**
+   - **Her zaman sadece 2 seçenek:**
+     1. "+X kendi takımına" (text-green-300, ⬆️ ikonu)
+     2. "-X rakip takıma" (text-red-300, ⬇️ ikonu)
+   - X = şanslı sayı
+   - Görsel: /assets/genel-buton.png
+   - Height: 100px
+   - Gap: space-y-6
+   - Icon boyutu: text-3xl (mr-4)
+   - Text boyutu: text-2xl, font-bold
+   - Hover: scale-[1.02]
+
+5. **Seçim Yapıldıktan Sonra (Loading State)**
+   - Container: max-w-lg, px-10 py-8
+   - Icon: text-5xl (seçilen icon)
+   - Choice text: text-xl, mt-2
+   - "Seçim uygulanıyor...": text-xl, text-yellow-300
+   - Spinner: h-16 w-16, border-4
+
+6. **Alt Kısım: Takım Durumu**
+   - 2 buton yan yana, gap-6
+   - Her buton:
+     - Görsel: /assets/genel-buton.png
+     - h-16, min-width: 200px
+     - İçerik: Karakter avatarı (h-10 w-10) + Takım durumu
+     - Text: text-lg, font-bold, text-white
+     - Avatar border: border-2 (blue-400/pink-400)
+     - Gap: gap-3
+
+**Seçenek Oluşturma Mantığı:**
+```javascript
+luckyNumber = rastgele(1-6)
+
+// Her zaman sabit 2 seçenek:
+choices = [
+  {
+    choice: `+${luckyNumber} kendi takımına`,
+    effect: { type: 'gain', target: 'self', amount: luckyNumber }
+  },
+  {
+    choice: `-${luckyNumber} rakip takıma`,
+    effect: { type: 'lose', target: 'opponent', amount: luckyNumber }
+  }
+]
+```
+
+**Seçenek Butonları:**
+- Görsel: /assets/genel-buton.png
+- Renk:
+  - "+X kendi takımına": text-green-300
+  - "-X rakip takıma": text-red-300
+- Icon: ⬆️ (kazanç), ⬇️ (kayıp)
+- Seçilince: 2 saniye animasyon → efekt uygulanır → devam
+
+**Örnek:**
+```
+Şanslı sayı: 2
+Seçenekler:
+  1. +2 kendi takımına
+  2. -2 rakip takıma
+```
+
+---
+
+### 4.9 OYUN SONU EKRANI
+**Layout:**
+- Fixed inset-0, h-screen, w-screen
+- Background: /assets/background.png
+- Confetti animasyonu (40 parça, farklı renkler, sürekli düşüş)
+
+**Bileşenler:**
+
+1. **Üst Kısım: OYUN BİTTİ Banner**
+   - Görsel: /golden-banner.png
+   - h-20, max-width: 500px
+   - Üzerinde "🎮 OYUN BİTTİ! 🎮" (text-white, font-bold, text-xl)
+
+2. **Orta Kısım: İki Panel Yan Yana**
+
+   **Sol Panel: Kazanan Gösterimi**
+   - Panel görseli: /assets/soru-arkasi.png
+   - max-w-xl, maxHeight: 480px
+   
+   - **Podium (Yukarıdan aşağıya):**
+     
+     **1. Sıra (Kazanan):**
+     - Taç emoji: 👑 (text-4xl, -top-5 pozisyonunda, bounce animasyonu)
+     - Karakter görseli: w-20 h-20, rounded-full, border-4 border-yellow-400
+     - Pulse animasyonu
+     - Kupa emoji: 🏆 (text-3xl, sağ alt köşede)
+     - Podium: w-20 h-20, gradient (yellow-600 → yellow-300)
+     - Üzerinde "1" (text-amber-900, text-2xl, font-bold)
+     
+     **2. Sıra (Kaybeden):**
+     - Karakter görseli: w-14 h-14, border-2 border-gray-400
+     - Podium: w-16 h-14, gradient (gray-500 → gray-300)
+     - Üzerinde "2" (text-white, text-lg)
+     
+     **3. Sıra (Boş):**
+     - Podium: w-16 h-10, gradient (amber-700 → amber-500)
+     - Üzerinde "3" (text-white, text-base)
+
+   **Sağ Panel: Final Skor**
+   - Panel görseli: /assets/soru-arkasi.png
+   - max-w-lg, maxHeight: 580px
+   
+   - Başlık: "🏆 FİNAL SKORU 🏆" (text-yellow-400, font-bold, text-2xl)
+   
+   - **Her Takım Satırı (Dikey):**
+     - Takım adı: text-xl, font-bold
+     - Karakter görseli: w-16 h-16, rounded-full
+     - Basamak sayısı: text-lg
+     - Kazanan: Altın renk efekti
+     - Kaybeden: Gri ton
+
+3. **Alt Kısım: Tekrar Oyna Butonu**
+   - Görsel: /assets/genel-buton.png
+   - w-48 h-14
+   - Üzerinde "TEKRAR OYNA" (text-white, font-bold, text-lg)
+   - Hover: scale-110, glow efekti
+
+**Önemli Notlar:**
+- Oyun istatistikleri KALDIRILDI (toplam soru, mod, sürpriz bilgileri gösterilmiyor)
+- Beraberlik durumunda: "BERABERE!" mesajı, her iki takım da podiumda eşit gösterilir
+
+---
+
+## 5. OYUN AKIŞI VE MANTIK
+
+### 5.1 Oyun Başlangıcı
+```
+1. Uygulama açılır
+2. API'den reklamlar çekilir
+   - Reklam varsa → Reklam ekranı (duration_seconds süresince)
+   - Reklam yoksa → Doğrudan ana menü
+3. Ana menü ekranı
+4. "BAŞLA" butonuna tıklanır
+5. Takım seçimi ekranı
+   - Her iki takım isim girer
+   - Her iki takım karakter seçer
+   - "DEVAM ET" aktif olur
+6. Oyun ayarları ekranı
+   - Soru sayısı seçilir (10/20/30/40)
+   - Oyun modu seçilir (Süreli/Süresiz)
+   - Sürpriz sistemi açılır/kapatılır
+7. "OYUNU BAŞLAT" butonuna tıklanır
+8. API'den sorular çekilir
+   - Yeterli soru varsa → API soruları kullanılır
+   - Yetersizse → Placeholder sorulardan eklenir
+9. İlk soru için "Soru Hazır" ekranı gösterilir
+```
+
+### 5.2 Soru Döngüsü
+```
+1. "SORUYU GÖSTER" butonuna tıklanır (veya sayaç biter)
+2. Soru aktif ekranı gösterilir
+   - Süreli modda: 30 saniye geri sayım başlar
+   - Süresiz modda: Sayaç yok
+3. Kullanıcı cevap seçer
+   - Multiple Choice: A/B/C/D butonlarından biri
+   - True/False: Doğru/Yanlış butonlarından biri
+   - Classic: "Cevabı Göster" → Cevap gösterilir → "Doğru Bildi"/"Yanlış Bildi"
+   - **ÖNEMLİ:** Cevap seçildiği anda süre DURUR (süreli modda)
+4. Cevap kontrol edilir
+   - Doğruysa:
+     - Süreli modda: Kalan süreye göre +1/+2/+3 basamak
+     - Süresiz modda: +1 basamak
+     - Score +1
+   - Yanlışsa: Puan değişmez
+5. "DEVAM ET" butonu görünür (sağ tarafta)
+6. Kullanıcı "DEVAM ET"e tıklar
+7. Merdiven ilerlemesi ekranı gösterilir
+   - Animasyon ile basamak yükselişi
+   - Her iki takımın merdivenlerinde sliding window güncellenir
+8. **Sıra değişimi:** currentTurn A ↔ B değişir
+9. Sıra kontrolü yapılır
+   - currentQuestion % 3 === 0 VE surpriseSystem aktif
+     → Sürpriz olayı ekranı
+   - Değilse → Sonraki soru veya oyun sonu kontrolü
+10. Oyun sonu kontrolü:
+   - Birisi hedefe ulaştı mı? (ladderPosition >= ladderTarget)
+     → Oyun biter
+   - Sorular bitti mi? (currentQuestion >= totalQuestions)
+     → Oyun biter
+```
+```
+1. "SORUYU GÖSTER" butonuna tıklanır (veya sayaç biter)
+2. Soru aktif ekranı gösterilir
+   - Süreli modda: 30 saniye geri sayım başlar
+   - Süresiz modda: Sayaç yok
+3. Kullanıcı cevap seçer
+   - Multiple Choice: A/B/C/D butonlarından biri
+   - True/False: Doğru/Yanlış butonlarından biri
+   - Classic: "Cevabı Göster" → Cevap gösterilir → "Doğru Bildi"/"Yanlış Bildi"
+4. Cevap kontrol edilir
+   - Doğruysa:
+     - Süreli modda: Kalan süreye göre +1/+2/+3 basamak
+     - Süresiz modda: +1 basamak
+     - Score +1
+   - Yanlışsa: Puan değişmez
+5. "DEVAM ET" butonu görünür (sağ tarafta)
+6. Kullanıcı "DEVAM ET"e tıklar
+7. Merdiven ilerlemesi ekranı gösterilir
+   - Animasyon ile basamak yükselişi
+   - Her iki takımın merdivenlerinde sliding window güncellenir
+8. Sıra kontrolü yapılır
+   - currentQuestion % 3 === 0 VE surpriseSystem aktif
+     → Sürpriz olayı ekranı
+   - Değilse → Sonraki soru veya oyun sonu kontrolü
+9. Oyun sonu kontrolü:
+   - Birisi hedefe ulaştı mı? (ladderPosition >= ladderTarget)
+     → Oyun biter
+   - Sorular bitti mi? (currentQuestion >= totalQuestions)
+     → Oyun biter
+   - Hayırsa → currentQuestion++, sıra değişir (A ↔ B), döngü tekrar
+```
+
+### 5.3 Sürpriz Olayı
+```
+1. Her 3. soruda (3, 6, 9, 12...) tetiklenir
+2. Rastgele zar atılır (1-6) → Şanslı sayı belirlenir
+3. **Her zaman 2 seçenek sunulur:**
+   - "+X kendi takımına" (X = şanslı sayı)
+   - "-X rakip takıma" (X = şanslı sayı)
+4. Sıradaki takım seçim yapar
+5. Efekt uygulanır:
+   - "+X kendi takımına" → Kendi takımına +X basamak
+   - "-X rakip takıma" → Rakip takıma -X basamak
+6. Merdiven pozisyonları güncellenir
+7. Oyun sonu kontrolü yapılır
+8. Devam edilirse → Sonraki soru
+
+Örnek:
+- Şanslı sayı 2 çıkarsa:
+  - Seçenek 1: "+2 kendi takımına"
+  - Seçenek 2: "-2 rakip takıma"
+```
+
+### 5.4 Oyun Bitişi Koşulları
+```
+Oyun BİTER:
+1. Bir takımın ladderPosition >= ladderTarget
+   VEYA
+2. currentQuestion >= totalQuestions (tüm sorular bitti)
+
+Kazanan Belirleme:
+- Hedefe ulaşan varsa → O takım kazanır
+- Sorular bittiyse → Daha yüksekteki takım kazanır
+- Eşit pozisyondalarsa → Beraberlik
+```
+
+### 5.5 Puan Hesaplama (Süreli Mod)
+```
+Cevap doğruysa:
+- 0-10 saniye kullanıldıysa (timeLeft >= 20) → +3 basamak
+- 11-20 saniye kullanıldıysa (timeLeft >= 10) → +2 basamak
+- 21-30 saniye kullanıldıysa (timeLeft < 10) → +1 basamak
+
+Süre bittiyse (timeout):
+- Cevap verilmemiş kabul edilir → Puan yok
+```
+
+### 5.6 Puan Hesaplama (Süresiz Mod)
+```
+Cevap doğruysa:
+- +1 basamak (süre farketmez)
+```
+
+---
+
+## 6. DOSYA YAPISI
+
+```
+/app
+  page.tsx                 # Ana oyun sayfası, state yönetimi
+  layout.tsx               # Root layout, font tanımları
+  globals.css              # Global stiller, Baloo 2 import
+
+/components
+  AdvertisementScreen.tsx  # Reklam ekranı
+  MainMenu.tsx             # Ana menü
+  TeamSelection.tsx        # Takım ve karakter seçimi
+  GameSettings.tsx         # Oyun ayarları
+  QuestionReady.tsx        # Soru hazır ekranı
+  QuestionDisplay.tsx      # Soru gösterimi (aktif)
+  LadderProgress.tsx       # Merdiven ilerlemesi (sliding window)
+  SurpriseEvent.tsx        # Sürpriz olayı
+  GameResults.tsx          # Oyun sonu ekranı
+  PublisherLogo.tsx        # Publisher logo bileşeni
+
+/types
+  game.ts                  # Oyun type tanımları
+  api.ts                   # API type tanımları
+
+/lib
+  api-service.ts           # API çağrıları (fetch wrappers)
+  game-utils.ts            # Oyun mantığı fonksiyonları
+  utils.ts                 # Genel yardımcı fonksiyonlar
+
+/data
+  characters.ts            # 6 karakter tanımları
+  questions.ts             # Fallback sorular (API sorularını kullan)
+  placeholder-questions.ts # Placeholder sorular (API yoksa)
+
+/public
+  /assets
+    background.png
+    soru-arkasi.png
+    soru-sayac-banneri.png
+    genel-buton.png
+    correct-button.png
+    wrong-button.png
+    devam-et.png
+    open-açık-butonu.png
+    soru-sayısı-butonu.png
+    selected-süre.png
+    süreli-süresiz-butonu.png
+    sure.png
+    step.png
+    /characters
+      (6 karakter görseli)
+
+  golden-banner.png
+  placeholder-logo.png
+
+/.vscode
+  settings.json            # VS Code workspace ayarları
+
+.prettierrc                # Prettier yapılandırması
+.prettierignore            # Prettier ignore dosyası
+.copilot-instructions.md   # GitHub Copilot talimatları
+prompt.md                  # 🔴 GÜNCEL SPESIFIKASYON
+README.md                  # Proje dokümantasyonu
+```
+
+---
+
+## 7. ÖNEMLİ NOTLAR
+
+### 7.1 API Fallback Sistemi
+- API başarısızsa placeholder sorular devreye girer
+- Yetersiz soru varsa placeholder'lardan eklenir
+- Asla oyun sorulardan dolayı durmamalı
+
+### 7.2 Soru Dönüşümü
+```typescript
+// API formatından oyun formatına dönüştürme
+function convertGameQuestionToQuestion(gq: GameQuestion): Question {
+  if (gq.type === "true_false") {
+    return {
+      ...gq,
+      options: {
+        A: "Doğru",
+        B: "Yanlış"
+      },
+      correct_answer: gq.answers.find(a => a.is_correct)?.answer_text === "Doğru" 
+        ? "true" 
+        : "false"
+    }
+  }
+  
+  if (gq.type === "multiple_choice") {
+    return {
+      ...gq,
+      options: {
+        A: gq.answers[0].answer_text,
+        B: gq.answers[1].answer_text,
+        C: gq.answers[2]?.answer_text,
+        D: gq.answers[3]?.answer_text
+      },
+      correct_answer: ["A", "B", "C", "D"][
+        gq.answers.findIndex(a => a.is_correct)
+      ]
+    }
+  }
+  
+  // Classic tipi için özel işlem
+}
+```
+
+### 7.3 True/False Cevap Kontrolü
+```typescript
+// True/False sorularda dikkat!
+if (question.type === "true_false") {
+  const selectedValue = answer === "A" ? "true" : "false"
+  const isCorrect = selectedValue === question.correct_answer
+}
+```
+
+### 7.4 Merdiven Pozisyon Kontrolü
+```typescript
+// Negatif pozisyona izin verilmez
+team.ladderPosition = Math.max(0, team.ladderPosition + steps)
+
+// Hedefi aşma kontrolü (opsiyonel)
+team.ladderPosition = Math.min(ladderTarget, team.ladderPosition)
+```
+
+### 7.5 Sürpriz Efekt Uygulama
+```typescript
+function applySurpriseEffect(
+  teams: Team[], 
+  currentTurn: "A" | "B", 
+  choice: SurpriseChoice
+): Team[] {
+  return teams.map(team => {
+    if (choice.effect.target === 'self' && team.id === currentTurn) {
+      return {
+        ...team,
+        ladderPosition: Math.max(0, team.ladderPosition + (choice.effect.amount || 0))
+      }
+    }
+    if (choice.effect.target === 'opponent' && team.id !== currentTurn) {
+      return {
+        ...team,
+        ladderPosition: Math.max(0, team.ladderPosition - (choice.effect.amount || 0))
+      }
+    }
+    return team
+  })
+}
+```
+
+### 7.6 Kazanan Belirleme
+```typescript
+function determineWinner(teams: Team[], target: number): "A" | "B" | "tie" {
+  const teamA = teams.find(t => t.id === "A")!
+  const teamB = teams.find(t => t.id === "B")!
+  
+  // Hedefe ulaşan varsa
+  if (teamA.ladderPosition >= target && teamB.ladderPosition >= target) {
+    return teamA.ladderPosition > teamB.ladderPosition ? "A" : 
+           teamB.ladderPosition > teamA.ladderPosition ? "B" : "tie"
+  }
+  if (teamA.ladderPosition >= target) return "A"
+  if (teamB.ladderPosition >= target) return "B"
+  
+  // Sorular bittiyse pozisyona göre
+  if (teamA.ladderPosition > teamB.ladderPosition) return "A"
+  if (teamB.ladderPosition > teamA.ladderPosition) return "B"
+  return "tie"
+}
+```
+
+---
+
+## 8. TASARIM PRENSİPLERİ
+
+### 8.1 Renk Paleti
+- **Ana arka plan:** Özel arka plan görseli (/assets/background.png)
+- **Paneller:** Oyun temalı dekoratif görseller
+- **Butonlar:** Görsel asset'ler (hover: scale-105)
+- **Metin:**
+  - Başlıklar: text-white, font-bold
+  - Alt başlıklar: text-amber-900 (banner üzerinde)
+  - Vurgu: text-yellow-300/400
+  - Bilgi: text-white/80
+
+### 8.2 Tipografi
+- **Font:** Baloo 2 (global)
+- **Başlıklar:** text-xl ~ text-2xl, font-bold
+- **Sorular:** text-lg (18px), font-bold
+- **Buton metinleri:** text-base ~ text-sm, font-bold
+- **Bilgi metinleri:** text-xs ~ text-sm
+
+### 8.3 Spacing & Sizing
+- **Ekran padding:** px-4 ~ px-8, py-4 ~ py-8
+- **Component gap:** gap-4 ~ gap-8
+- **Buton boyutları:**
+  - Küçük: w-24 h-10
+  - Orta: w-40 h-12
+  - Büyük: w-48 h-14
+  - Ekstra büyük: w-64 h-16
+
+### 8.4 Animasyonlar
+- **Geçişler:** transition-all duration-300
+- **Hover:** scale-105, transform
+- **Pulse:** animation: pulse 2s infinite (kazanan için)
+- **Bounce:** animation: bounce 1s infinite (taç için)
+- **Confetti:** sürekli düşüş animasyonu (oyun sonu)
+
+### 8.5 Responsive (Opsiyonel)
+- Birincil hedef: Desktop (1920x1080)
+- İkincil hedef: Tablet landscape (1024x768)
+- Mobil: Desteklenmeyebilir (oyun karmaşık)
+
+---
+
+## 9. TEST SENARYOLARı
+
+### 9.1 Normal Oyun Akışı
+```
+1. Reklam gösterilir (varsa)
+2. Takımlar oluşturulur
+3. 20 soru, süreli mod, sürpriz açık seçilir
+4. 20 soru cevaplanır
+5. 3, 6, 9, 12, 15, 18. sorularda sürpriz tetiklenir
+6. Birisi 50 basamağa ulaşır veya 20 soru biter
+7. Kazanan gösterilir
+```
+
+### 9.2 API Başarısız
+```
+1. API timeout/404 döner
+2. Placeholder sorular devreye girer
+3. Oyun normal şekilde devam eder
+```
+
+### 9.3 Yetersiz Soru
+```
+1. API'den 15 soru gelir
+2. Kullanıcı 20 soru seçer
+3. 15 API sorusu + 5 placeholder sorusu kullanılır
+4. Oyun normal şekilde devam eder
+```
+
+### 9.4 Beraberlik
+```
+1. 10 soru oynanır
+2. Her iki takım da 12 basamakta
+3. Sorular biter
+4. "BERABERE!" mesajı gösterilir
+```
+
+### 9.5 Süreli Mod Timeout
+```
+1. Soru gösterilir
+2. 30 saniye geçer
+3. Cevap verilmemiş sayılır
+4. Puan eklenmez
+5. Sonraki soruya geçilir
+```
+
+---
+
+## 10. SON KONTROL LİSTESİ
+
+### API
+- [ ] Soru endpoint entegrasyonu
+- [ ] Reklam endpoint entegrasyonu
+- [ ] Publisher logo endpoint entegrasyonu
+- [ ] Callback endpoint entegrasyonu
+- [ ] Hata yönetimi ve fallback
+
+### Ekranlar
+- [ ] Reklam ekranı (süre sayacı, X butonu)
+- [ ] Ana menü
+- [ ] Takım seçimi (3x2 grid, 6 karakter)
+- [ ] Oyun ayarları (4 soru sayısı, 2 mod, toggle)
+- [ ] Soru hazır (sayaç, süre)
+- [ ] Soru aktif (3 tip soru, DEVAM ET butonu)
+- [ ] Merdiven (sliding window, renk tiers, animasyon)
+- [ ] Sürpriz olayı (zar, seçenekler)
+- [ ] Oyun sonu (podium, skor, confetti)
+
+### Oyun Mantığı
+- [ ] Soru döngüsü
+- [ ] Sıra değişimi (A ↔ B)
+- [ ] Puan hesaplama (süreli/süresiz)
+- [ ] Merdiven ilerlemesi
+- [ ] Sürpriz sistemi (her 3 soruda)
+- [ ] Oyun bitişi (hedef veya soru bitişi)
+- [ ] Kazanan belirleme
+
+### Veri Yönetimi
+- [ ] API soru dönüşümü (GameQuestion → Question)
+- [ ] Placeholder soru ekleme
+- [ ] True/False cevap kontrolü
+- [ ] Classic soru manuel değerlendirme
+- [ ] State yönetimi (GameState)
+
+### Görsel & Animasyon
+- [ ] Tüm asset'ler yerinde
+- [ ] Hover efektleri
+- [ ] Geçiş animasyonları
+- [ ] Merdiven sliding window
+- [ ] Confetti efekti
+- [ ] Karakter görselleri
+
+### Font & Tipografi
+- [ ] Baloo 2 global import
+- [ ] Doğru font boyutları
+- [ ] Okunabilirlik
+
+---
+
+## 11. SONUÇ
+
+Bu spesifikasyon, "Puan Merdiveni" oyununu sıfırdan inşa etmek için gereken TÜM bilgileri içerir. Tüm ekranlar, boyutlar, renkler, animasyonlar, API entegrasyonları, oyun mantığı ve veri yapıları detaylı olarak tanımlanmıştır.
+
+**Bu prompt ile uygulama tek seferde oluşturulabilir.**

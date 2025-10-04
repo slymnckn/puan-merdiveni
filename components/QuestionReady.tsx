@@ -5,9 +5,10 @@ import type { GameState } from "@/types/game"
 interface QuestionReadyProps {
   gameState: GameState
   onShowQuestion: () => void
+  currentTurn: "A" | "B"
 }
 
-export default function QuestionReady({ gameState, onShowQuestion }: QuestionReadyProps) {
+export default function QuestionReady({ gameState, onShowQuestion, currentTurn }: QuestionReadyProps) {
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden">
       <div
@@ -65,8 +66,12 @@ export default function QuestionReady({ gameState, onShowQuestion }: QuestionRea
         {/* Bottom Section - Team Scores */}
         <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-8 px-8 pb-12 z-20">
           {/* Team A */}
-          <div className="relative">
-            <img src="/assets/genel-buton.png" alt="Team A Score" className="h-20 w-auto min-w-[240px]" />
+          <div className={`relative ${currentTurn === "A" ? "animate-gentle-bounce" : ""}`}>
+            <img 
+              src={currentTurn === "A" ? "/assets/correct-button.png" : "/assets/genel-buton.png"} 
+              alt="Team A Score" 
+              className={`h-20 w-auto min-w-[240px] ${currentTurn === "A" ? "drop-shadow-[0_0_15px_rgba(34,197,94,0.7)]" : ""}`}
+            />
             <div className="absolute inset-0 flex items-center justify-center gap-2">
               <img
                 src={gameState.teams[0].character?.image || "/assets/hero-2.png"}
@@ -79,8 +84,12 @@ export default function QuestionReady({ gameState, onShowQuestion }: QuestionRea
           </div>
 
           {/* Team B */}
-          <div className="relative">
-            <img src="/assets/genel-buton.png" alt="Team B Score" className="h-20 w-auto min-w-[240px]" />
+          <div className={`relative ${currentTurn === "B" ? "animate-gentle-bounce" : ""}`}>
+            <img 
+              src={currentTurn === "B" ? "/assets/correct-button.png" : "/assets/genel-buton.png"} 
+              alt="Team B Score" 
+              className={`h-20 w-auto min-w-[240px] ${currentTurn === "B" ? "drop-shadow-[0_0_15px_rgba(34,197,94,0.7)]" : ""}`}
+            />
             <div className="absolute inset-0 flex items-center justify-center gap-2">
               <img
                 src={gameState.teams[1].character?.image || "/assets/hero-1.png"}

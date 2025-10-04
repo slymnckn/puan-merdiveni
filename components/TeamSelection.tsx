@@ -44,7 +44,7 @@ export default function TeamSelection({ teams, onTeamsUpdate, onContinue }: Team
         <div className="relative mb-6">
           <img src="/assets/soru-sayac-banneri.png" alt="Team Selection Title" className="h-20 w-auto" />
           <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '-12px' }}>
-            <span className="text-amber-900 font-bold text-base drop-shadow-sm">TAKIM & KARAKTER SEÇİMİ</span>
+            <span className="text-amber-900 font-bold text-xl drop-shadow-sm">TAKIM & KARAKTER SEÇİMİ</span>
           </div>
         </div>
 
@@ -53,50 +53,50 @@ export default function TeamSelection({ teams, onTeamsUpdate, onContinue }: Team
           {localTeams.map((team) => (
             <div key={team.id} className="relative flex-1">
               <img src="/assets/soru-arkasi.png" alt={`Team ${team.id} Panel`} className="w-full h-auto" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-8" style={{ paddingTop: '90px', paddingBottom: '40px' }}>
+              <div className="absolute inset-0 flex flex-col items-center px-8 pt-[75px] pb-[60px]">
                 {/* Team Name Input */}
-                <div className="relative mb-2">
-                  <img src="/assets/genel-buton.png" alt="Name Input" className="h-10 w-44" />
+                <div className="relative mb-2 flex-shrink-0">
+                  <img src="/assets/genel-buton.png" alt="Name Input" className="h-8 w-36" />
                   <input
                     type="text"
                     value={team.name}
                     onChange={(e) => updateTeamName(team.id, e.target.value)}
                     placeholder={`TAKIM ${team.id}`}
-                    className="absolute inset-0 bg-transparent text-white font-bold text-center text-xs placeholder-white/70 outline-none"
+                    className="absolute inset-0 bg-transparent text-white font-bold text-center text-[10px] placeholder-white/70 outline-none"
                     maxLength={15}
                   />
                 </div>
 
                 {/* Character Selection Grid - 3 columns x 2 rows for 6 characters */}
-                <div className="grid grid-cols-3 gap-x-20 gap-y-4 justify-items-center mb-8">
+                <div className="grid grid-cols-3 gap-x-16 gap-y-6 mb-3 flex-shrink-0">
                   {characters.map((character) => (
-                    <button
-                      key={character.id}
-                      onClick={() => updateTeamCharacter(team.id, character)}
-                      className={`relative w-20 h-20 rounded-full overflow-hidden border-2 transition-all hover:scale-110 ${
-                        team.character?.id === character.id
-                          ? "border-yellow-400 ring-2 ring-yellow-300 scale-105"
-                          : "border-white/50 hover:border-yellow-300"
-                      }`}
-                      title={character.name}
-                    >
-                      <img
-                        src={character.image || "/placeholder.svg"}
-                        alt={character.name}
-                        className="w-full h-full object-cover"
-                      />
-                      {team.character?.id === character.id && <div className="absolute inset-0 bg-yellow-400/20"></div>}
-                    </button>
+                    <div key={character.id} className="flex flex-col items-center gap-2">
+                      <div className="w-16 h-16">
+                        <button
+                          onClick={() => updateTeamCharacter(team.id, character)}
+                          className={`relative w-full h-full rounded-full overflow-visible transition-colors ${
+                            team.character?.id === character.id
+                              ? "outline outline-[3px] outline-yellow-400 outline-offset-2"
+                              : "outline outline-[1.5px] outline-white/50 outline-offset-0 hover:outline-yellow-300 hover:outline-offset-1"
+                          }`}
+                          title={character.name}
+                        >
+                          <img
+                            src={character.image || "/placeholder.svg"}
+                            alt={character.name}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                          {team.character?.id === character.id && (
+                            <div className="absolute inset-0 bg-yellow-400/30 rounded-full pointer-events-none"></div>
+                          )}
+                        </button>
+                      </div>
+                      {/* Her karakterin kendi ismi altında */}
+                      <span className="text-yellow-300 font-semibold text-[10px] drop-shadow-lg text-center leading-tight">
+                        {character.name}
+                      </span>
+                    </div>
                   ))}
-                </div>
-
-                {/* Selected Character Name */}
-                <div className="h-6 flex items-center justify-center">
-                  {team.character && (
-                    <span className="text-yellow-300 font-semibold text-xs drop-shadow-lg text-center px-2">
-                      {team.character.name}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>

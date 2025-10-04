@@ -335,6 +335,7 @@ export default function GameApp() {
           currentScreen: "question-ready",
           currentQuestionData: nextQuestion,
           correctAnswer: nextQuestion.correct_answer,
+          currentTurn: prev.currentTurn === "A" ? "B" : "A", // Switch turns
         }))
       }
     }
@@ -438,12 +439,13 @@ export default function GameApp() {
     if (
       gameState.currentScreen === "question-active" &&
       gameState.settings.gameMode === "timed" &&
-      gameState.timeLeft > 0
+      gameState.timeLeft > 0 &&
+      !gameState.selectedAnswer // Timer sadece cevap seçilmediğinde çalışır
     ) {
       const timer = setTimeout(() => setGameState((prev) => ({ ...prev, timeLeft: prev.timeLeft - 1 })), 1000)
       return () => clearTimeout(timer)
     }
-  }, [gameState.currentScreen, gameState.timeLeft, gameState.settings.gameMode])
+  }, [gameState.currentScreen, gameState.timeLeft, gameState.settings.gameMode, gameState.selectedAnswer])
 
   // Render current screen
   switch (gameState.currentScreen) {
@@ -481,7 +483,7 @@ export default function GameApp() {
       )
 
     case "question-ready":
-      return <QuestionReady gameState={gameState} onShowQuestion={handleShowQuestion} />
+      return <QuestionReady gameState={gameState} onShowQuestion={handleShowQuestion} currentTurn={gameState.currentTurn} />
 
     case "ladder-progress":
       return (
@@ -609,45 +611,47 @@ export default function GameApp() {
                                 </span>
                               </div>
                             </button>
-                          ) : !gameState.answerResult ? (
-                            // İkinci aşama: Cevap gösterildi, şimdi Doğru/Yanlış bilme butonları
-                            <div className="space-y-4">
-                              {/* Cevabı göster */}
-                              <div className="bg-purple-900/80 backdrop-blur-sm rounded-lg px-6 py-4 border-2 border-yellow-400">
-                                <p className="text-yellow-300 font-semibold text-sm mb-2">CEVAP:</p>
-                                <p className="text-white text-lg font-bold">
+                          ) : (
+                            // İkinci aşama: Cevap gösterildi
+                            <div className="space-y-6">
+                              {/* Cevabı göster - Sade format */}
+                              <div className="text-center">
+                                <p className="text-yellow-300 font-bold text-xl mb-3">CEVAP:</p>
+                                <p className="text-white text-2xl font-bold drop-shadow-lg">
                                   {gameState.currentQuestionData.options?.A || "Cevap yükleniyor..."}
                                 </p>
                               </div>
                               
-                              {/* Doğru / Yanlış bilme butonları */}
-                              <div className="grid grid-cols-2 gap-4 max-w-xl mx-auto">
-                                <button
-                                  onClick={() => handleAnswerClick("correct")}
-                                  className="relative group transition-transform hover:scale-105 cursor-pointer"
-                                >
-                                  <img src="/assets/correct-button.png" alt="Correct Button" className="w-full h-auto" />
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-white font-bold text-lg drop-shadow-lg">
-                                      ✅ Doğru Bildi
-                                    </span>
-                                  </div>
-                                </button>
-                                
-                                <button
-                                  onClick={() => handleAnswerClick("wrong")}
-                                  className="relative group transition-transform hover:scale-105 cursor-pointer"
-                                >
-                                  <img src="/assets/wrong-button.png" alt="Wrong Button" className="w-full h-auto" />
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-white font-bold text-lg drop-shadow-lg">
-                                      ❌ Yanlış Bildi
-                                    </span>
-                                  </div>
-                                </button>
-                              </div>
+                              {/* Doğru / Yanlış bilme butonları - Sadece cevap verilmemişse göster */}
+                              {!gameState.answerResult && (
+                                <div className="grid grid-cols-2 gap-4 max-w-xl mx-auto">
+                                  <button
+                                    onClick={() => handleAnswerClick("correct")}
+                                    className="relative group transition-transform hover:scale-105 cursor-pointer"
+                                  >
+                                    <img src="/assets/correct-button.png" alt="Correct Button" className="w-full h-auto" />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <span className="text-white font-bold text-lg drop-shadow-lg">
+                                        ✅ Doğru Bildi
+                                      </span>
+                                    </div>
+                                  </button>
+                                  
+                                  <button
+                                    onClick={() => handleAnswerClick("wrong")}
+                                    className="relative group transition-transform hover:scale-105 cursor-pointer"
+                                  >
+                                    <img src="/assets/wrong-button.png" alt="Wrong Button" className="w-full h-auto" />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <span className="text-white font-bold text-lg drop-shadow-lg">
+                                        ❌ Yanlış Bildi
+                                      </span>
+                                    </div>
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          ) : null}
+                          )}
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-3 w-full max-w-xl mx-auto">
@@ -713,8 +717,12 @@ export default function GameApp() {
 
             <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-8 px-8 pb-12 z-20">
               {/* Team A */}
-              <div className="relative">
-                <img src="/assets/genel-buton.png" alt="Team A Score" className="h-20 w-auto min-w-[240px]" />
+              <div className={`relative ${gameState.currentTurn === 'A' ? 'animate-gentle-bounce' : ''}`}>
+                <img 
+                  src={gameState.currentTurn === 'A' ? "/assets/correct-button.png" : "/assets/genel-buton.png"} 
+                  alt="Team A Score" 
+                  className={`h-20 w-auto min-w-[240px] transition-all ${gameState.currentTurn === 'A' ? 'drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]' : ''}`}
+                />
                 <div className="absolute inset-0 flex items-center justify-center gap-2">
                   <img
                     src={gameState.teams[0].character?.image || "/assets/hero-2.png"}
@@ -729,8 +737,12 @@ export default function GameApp() {
               </div>
 
               {/* Team B */}
-              <div className="relative">
-                <img src="/assets/genel-buton.png" alt="Team B Score" className="h-20 w-auto min-w-[240px]" />
+              <div className={`relative ${gameState.currentTurn === 'B' ? 'animate-gentle-bounce' : ''}`}>
+                <img 
+                  src={gameState.currentTurn === 'B' ? "/assets/correct-button.png" : "/assets/genel-buton.png"} 
+                  alt="Team B Score" 
+                  className={`h-20 w-auto min-w-[240px] transition-all ${gameState.currentTurn === 'B' ? 'drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]' : ''}`}
+                />
                 <div className="absolute inset-0 flex items-center justify-center gap-2">
                   <img
                     src={gameState.teams[1].character?.image || "/assets/hero-1.png"}

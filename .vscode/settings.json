@@ -1,0 +1,71 @@
+{
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.next/**": true
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "files.associations": {
+    "*.md": "markdown"
+  },
+  "workbench.colorCustomizations": {
+    "editorWarning.foreground": "#ff9800",
+    "editorInfo.foreground": "#00bcd4"
+  },
+  "github.copilot.enable": {
+    "*": true,
+    "markdown": true,
+    "typescript": true,
+    "typescriptreact": true
+  },
+  "github.copilot.editor.enableAutoCompletions": true,
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  "editor.quickSuggestions": {
+    "comments": "on",
+    "strings": "on",
+    "other": "on"
+  },
+  "editor.suggest.showWords": false,
+  "editor.inlineSuggest.enabled": true,
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "todo-tree.general.tags": [
+    "TODO",
+    "FIXME",
+    "PROMPT.MD",
+    "UPDATE-PROMPT"
+  ],
+  "todo-tree.highlights.defaultHighlight": {
+    "icon": "alert",
+    "type": "text",
+    "foreground": "#fff",
+    "background": "#ff9800"
+  },
+  "todo-tree.highlights.customHighlight": {
+    "PROMPT.MD": {
+      "icon": "file",
+      "foreground": "#fff",
+      "background": "#e91e63",
+      "iconColour": "#e91e63"
+    },
+    "UPDATE-PROMPT": {
+      "icon": "sync",
+      "foreground": "#fff",
+      "background": "#ff5722",
+      "iconColour": "#ff5722"
+    }
+  }
+}
