@@ -43,34 +43,14 @@ export default function QuestionReady({ gameState, onShowQuestion, currentTurn }
           </div>
         </div>
 
-        {/* Center - Show Question Button */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-[60%] w-full max-w-4xl px-8">
-          <div className="relative w-full">
-            <img src="/assets/soru-arkasi.png" alt="Question Background" className="w-full h-auto" />
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-              {/* Show Question Button */}
-              <button onClick={onShowQuestion} className="relative group transition-all hover:scale-110 animate-pulse">
-                <div className="w-48 h-48 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-2xl border-4 border-yellow-300">
-                  <span className="text-white font-bold text-xl drop-shadow-lg text-center">
-                    SORUYU
-                    <br />
-                    GÖSTER
-                  </span>
-                </div>
-                <div className="absolute inset-0 rounded-full bg-yellow-400/20 animate-ping"></div>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Section - Team Scores */}
-        <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-8 px-8 pb-12 z-20">
+        {/* Team Banners - Sol tarafta dikey */}
+        <div className="absolute left-8 top-1/2 transform -translate-y-1/2 flex flex-col gap-4 z-20">
           {/* Team A */}
           <div className={`relative ${currentTurn === "A" ? "animate-gentle-bounce" : ""}`}>
             <img 
               src={currentTurn === "A" ? "/assets/correct-button.png" : "/assets/genel-buton.png"} 
               alt="Team A Score" 
-              className={`h-20 w-auto min-w-[240px] ${currentTurn === "A" ? "drop-shadow-[0_0_15px_rgba(34,197,94,0.7)]" : ""}`}
+              className={`h-20 w-auto min-w-[200px] transition-all ${currentTurn === "A" ? "drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]" : ""}`}
             />
             <div className="absolute inset-0 flex items-center justify-center gap-2">
               <img
@@ -88,7 +68,7 @@ export default function QuestionReady({ gameState, onShowQuestion, currentTurn }
             <img 
               src={currentTurn === "B" ? "/assets/correct-button.png" : "/assets/genel-buton.png"} 
               alt="Team B Score" 
-              className={`h-20 w-auto min-w-[240px] ${currentTurn === "B" ? "drop-shadow-[0_0_15px_rgba(34,197,94,0.7)]" : ""}`}
+              className={`h-20 w-auto min-w-[200px] transition-all ${currentTurn === "B" ? "drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]" : ""}`}
             />
             <div className="absolute inset-0 flex items-center justify-center gap-2">
               <img
@@ -98,6 +78,26 @@ export default function QuestionReady({ gameState, onShowQuestion, currentTurn }
               />
               <span className="text-white font-bold text-sm drop-shadow-lg">TAKIM B</span>
               <span className="text-white font-bold text-lg drop-shadow-lg">{gameState.teams[1].ladderPosition}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Center - Show Question Button */}
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-[52%] -translate-y-1/2 w-full max-w-7xl px-4" style={{ paddingLeft: '260px', paddingRight: '160px' }}>
+          <div className="relative w-full">
+            <img src="/assets/soru-arkasi.png" alt="Question Background" className="w-full h-auto" style={{ transform: 'scale(1.15)' }} />
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-10">
+              {/* Show Question Button */}
+              <button onClick={onShowQuestion} className="relative group transition-all hover:scale-110 animate-pulse">
+                <div className="w-48 h-48 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-2xl border-4 border-yellow-300">
+                  <span className="text-white font-bold text-xl drop-shadow-lg text-center">
+                    SORUYU
+                    <br />
+                    GÖSTER
+                  </span>
+                </div>
+                <div className="absolute inset-0 rounded-full bg-yellow-400/20 animate-ping"></div>
+              </button>
             </div>
           </div>
         </div>

@@ -548,34 +548,80 @@ export default function GameApp() {
               </div>
             </div>
 
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-[60%] w-full max-w-4xl px-8">
+            {/* Team Banners - Sol tarafta dikey */}
+            <div className="absolute left-8 top-1/2 transform -translate-y-1/2 flex flex-col gap-4 z-20">
+              {/* Team A */}
+              <div className={`relative ${gameState.currentTurn === 'A' ? 'animate-gentle-bounce' : ''}`}>
+                <img 
+                  src={gameState.currentTurn === 'A' ? "/assets/correct-button.png" : "/assets/genel-buton.png"} 
+                  alt="Team A Score" 
+                  className={`h-20 w-auto min-w-[200px] transition-all ${gameState.currentTurn === 'A' ? 'drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]' : ''}`}
+                />
+                <div className="absolute inset-0 flex items-center justify-center gap-2">
+                  <img
+                    src={gameState.teams[0].character?.image || "/assets/hero-2.png"}
+                    alt="Team A Character"
+                    className="h-10 w-10"
+                  />
+                  <span className="text-white font-bold text-sm drop-shadow-lg">
+                    TAKIM A
+                  </span>
+                  <span className="text-white font-bold text-lg drop-shadow-lg">{gameState.teams[0].ladderPosition}</span>
+                </div>
+              </div>
+
+              {/* Team B */}
+              <div className={`relative ${gameState.currentTurn === 'B' ? 'animate-gentle-bounce' : ''}`}>
+                <img 
+                  src={gameState.currentTurn === 'B' ? "/assets/correct-button.png" : "/assets/genel-buton.png"} 
+                  alt="Team B Score" 
+                  className={`h-20 w-auto min-w-[200px] transition-all ${gameState.currentTurn === 'B' ? 'drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]' : ''}`}
+                />
+                <div className="absolute inset-0 flex items-center justify-center gap-2">
+                  <img
+                    src={gameState.teams[1].character?.image || "/assets/hero-1.png"}
+                    alt="Team B Character"
+                    className="h-10 w-10"
+                  />
+                  <span className="text-white font-bold text-sm drop-shadow-lg">
+                    TAKIM B
+                  </span>
+                  <span className="text-white font-bold text-lg drop-shadow-lg">{gameState.teams[1].ladderPosition}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Soru Banner - Büyütülmüş ve merkezde */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-[52%] -translate-y-1/2 w-full max-w-7xl px-4" style={{ paddingLeft: '260px', paddingRight: '160px' }}>
               <div className="relative w-full">
-                <img src="/assets/soru-arkasi.png" alt="Question Background" className="w-full h-auto" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6" style={{ paddingTop: '65px' }}>
+                <img src="/assets/soru-arkasi.png" alt="Question Background" className="w-full h-auto" style={{ transform: 'scale(1.15)' }} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-10" style={{ paddingTop: '75px' }}>
                   {gameState.currentQuestionData && (
-                    <div className="w-full text-center">
-                      <div className="mb-6 space-y-4">
-                        <h2 className="text-white text-2xl font-bold drop-shadow-lg">
-                          Soru: {gameState.currentQuestionData.question_text}
-                        </h2>
-                        
-                        {/* Görsel varsa göster */}
-                        {gameState.currentQuestionData.image_url && (
-                          <div className="flex justify-center">
-                            <div className="bg-white p-2 rounded-lg shadow-lg w-48">
+                    <div className="w-full">
+                      {/* Görselli soru için yatay layout */}
+                      {gameState.currentQuestionData.image_url ? (
+                        <div className="flex items-start gap-8">
+                          {/* Sol taraf - Görsel */}
+                          <div className="flex-shrink-0" style={{ marginLeft: '-30px', marginTop: '20px' }}>
+                            <div className="bg-white p-3 rounded-lg shadow-lg" style={{ width: '220px' }}>
                               <img
                                 src={gameState.currentQuestionData.image_url}
                                 alt="Soru görseli"
-                                className="w-full h-auto max-h-32 object-contain rounded"
+                                className="w-full h-auto rounded"
+                                style={{ maxHeight: '220px', objectFit: 'contain' }}
                               />
                             </div>
                           </div>
-                        )}
-                      </div>
-                      
-                      {/* Render different UI based on question type */}
-                      {gameState.currentQuestionData.type === "true_false" ? (
-                        <div className="grid grid-cols-2 gap-3 w-full max-w-xl mx-auto">
+                          
+                          {/* Sağ taraf - Soru ve Şıklar */}
+                          <div className="flex-1" style={{ paddingRight: '0px', marginTop: '5px' }}>
+                            <h2 className="text-white text-2xl font-bold mb-6 drop-shadow-lg text-left">
+                              Soru: {gameState.currentQuestionData.question_text}
+                            </h2>
+                            
+                            {/* Şıklar için render */}
+                            {gameState.currentQuestionData.type === "true_false" ? (
+                              <div className="grid grid-cols-2 gap-3 w-full" style={{ maxWidth: '650px' }}>
                           {["true", "false"].map((option) => {
                             const key = option === "true" ? "A" : "B"
                             const text = option === "true" ? "Doğru" : "Yanlış"
@@ -607,8 +653,8 @@ export default function GameApp() {
                                 } ${gameState.answerResult ? "cursor-not-allowed" : "cursor-pointer"}`}
                               >
                                 <img src={buttonImage} alt="Answer Button" className="w-full h-auto" />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className="text-white font-bold text-lg drop-shadow-lg">
+                                <div className="absolute inset-0 flex items-center justify-center px-4">
+                                  <span className="text-white font-bold text-lg drop-shadow-lg text-center truncate max-w-full">
                                     {key}) {text}
                                   </span>
                                 </div>
@@ -629,9 +675,9 @@ export default function GameApp() {
                               }}
                               className="relative group transition-transform hover:scale-105 cursor-pointer"
                             >
-                              <img src="/assets/genel-buton.png" alt="Show Answer Button" className="w-56 h-auto" />
+                              <img src="/assets/genel-buton.png" alt="Show Answer Button" className="w-64 h-auto" />
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-white font-bold text-lg drop-shadow-lg">
+                                <span className="text-white font-bold text-xl drop-shadow-lg">
                                   Cevabı Göster
                                 </span>
                               </div>
@@ -641,22 +687,22 @@ export default function GameApp() {
                             <div className="space-y-6">
                               {/* Cevabı göster - Sade format */}
                               <div className="text-center">
-                                <p className="text-yellow-300 font-bold text-xl mb-3">CEVAP:</p>
-                                <p className="text-white text-2xl font-bold drop-shadow-lg">
+                                <p className="text-yellow-300 font-bold text-2xl mb-4">CEVAP:</p>
+                                <p className="text-white text-3xl font-bold drop-shadow-lg">
                                   {gameState.currentQuestionData.options?.A || "Cevap yükleniyor..."}
                                 </p>
                               </div>
                               
                               {/* Doğru / Yanlış bilme butonları - Sadece cevap verilmemişse göster */}
                               {!gameState.answerResult && (
-                                <div className="grid grid-cols-2 gap-4 max-w-xl mx-auto">
+                                <div className="grid grid-cols-2 gap-5 max-w-2xl mx-auto">
                                   <button
                                     onClick={() => handleAnswerClick("correct")}
                                     className="relative group transition-transform hover:scale-105 cursor-pointer"
                                   >
                                     <img src="/assets/correct-button.png" alt="Correct Button" className="w-full h-auto" />
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                      <span className="text-white font-bold text-lg drop-shadow-lg">
+                                      <span className="text-white font-bold text-xl drop-shadow-lg">
                                         ✅ Doğru Bildi
                                       </span>
                                     </div>
@@ -668,7 +714,7 @@ export default function GameApp() {
                                   >
                                     <img src="/assets/wrong-button.png" alt="Wrong Button" className="w-full h-auto" />
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                      <span className="text-white font-bold text-lg drop-shadow-lg">
+                                      <span className="text-white font-bold text-xl drop-shadow-lg">
                                         ❌ Yanlış Bildi
                                       </span>
                                     </div>
@@ -679,7 +725,7 @@ export default function GameApp() {
                           )}
                         </div>
                       ) : (
-                        <div className="grid grid-cols-2 gap-3 w-full max-w-xl mx-auto">
+                        <div className="grid grid-cols-2 gap-3 w-full" style={{ maxWidth: '650px' }}>
                           {gameState.currentQuestionData.options && Object.entries(gameState.currentQuestionData.options).map(([key, text]) => {
                             if (!text) return null
                             
@@ -703,14 +749,156 @@ export default function GameApp() {
                                 } ${gameState.answerResult ? "cursor-not-allowed" : "cursor-pointer"}`}
                               >
                                 <img src={buttonImage} alt="Answer Button" className="w-full h-auto" />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className="text-white font-bold text-xl drop-shadow-lg">
+                                <div className="absolute inset-0 flex items-center justify-center px-4">
+                                  <span className="text-white font-bold text-lg drop-shadow-lg text-center line-clamp-2 max-w-full overflow-hidden">
                                     {key}) {text}
                                   </span>
                                 </div>
                               </button>
                             )
                           })}
+                        </div>
+                      )}
+                          </div>
+                        </div>
+                      ) : (
+                        // Görselsiz soru için normal merkezi layout
+                        <div className="text-center">
+                          <h2 className="text-white text-3xl font-bold mb-8 drop-shadow-lg">
+                            Soru: {gameState.currentQuestionData.question_text}
+                          </h2>
+                          
+                          {gameState.currentQuestionData.type === "true_false" ? (
+                            <div className="grid grid-cols-2 gap-4 w-full max-w-2xl mx-auto">
+                              {["true", "false"].map((option) => {
+                                const key = option === "true" ? "A" : "B"
+                                const text = option === "true" ? "Doğru" : "Yanlış"
+                                
+                                let buttonImage = "/assets/genel-buton.png"
+                                
+                                if (gameState.answerResult && gameState.selectedAnswer) {
+                                  if (key === gameState.selectedAnswer) {
+                                    buttonImage = gameState.answerResult === "correct" ? "/assets/correct-button.png" : "/assets/wrong-button.png"
+                                  } else if (gameState.answerResult === "wrong") {
+                                    const correctKey = gameState.correctAnswer === "true" ? "A" : "B"
+                                    if (key === correctKey) {
+                                      buttonImage = "/assets/correct-button.png"
+                                    }
+                                  }
+                                }
+                                
+                                return (
+                                  <button
+                                    key={key}
+                                    onClick={() => !gameState.answerResult && handleAnswerClick(key)}
+                                    disabled={!!gameState.answerResult}
+                                    className={`relative group transition-transform hover:scale-105 ${
+                                      gameState.selectedAnswer === key ? "scale-105" : ""
+                                    } ${gameState.answerResult ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                  >
+                                    <img src={buttonImage} alt="Answer Button" className="w-full h-auto" />
+                                    <div className="absolute inset-0 flex items-center justify-center px-4">
+                                      <span className="text-white font-bold text-xl drop-shadow-lg text-center truncate max-w-full">
+                                        {key}) {text}
+                                      </span>
+                                    </div>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          ) : gameState.currentQuestionData.type === "classic" ? (
+                            <div className="text-center space-y-4">
+                              {!gameState.selectedAnswer ? (
+                                <button
+                                  onClick={() => {
+                                    setGameState((prev) => ({ 
+                                      ...prev, 
+                                      selectedAnswer: "show_answer" 
+                                    }))
+                                  }}
+                                  className="relative group transition-transform hover:scale-105 cursor-pointer"
+                                >
+                                  <img src="/assets/genel-buton.png" alt="Show Answer Button" className="w-64 h-auto" />
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-white font-bold text-xl drop-shadow-lg">
+                                      Cevabı Göster
+                                    </span>
+                                  </div>
+                                </button>
+                              ) : (
+                                <div className="space-y-6">
+                                  <div className="text-center">
+                                    <p className="text-yellow-300 font-bold text-2xl mb-4">CEVAP:</p>
+                                    <p className="text-white text-3xl font-bold drop-shadow-lg">
+                                      {gameState.currentQuestionData.options?.A || "Cevap yükleniyor..."}
+                                    </p>
+                                  </div>
+                                  
+                                  {!gameState.answerResult && (
+                                    <div className="grid grid-cols-2 gap-5 max-w-2xl mx-auto">
+                                      <button
+                                        onClick={() => handleAnswerClick("correct")}
+                                        className="relative group transition-transform hover:scale-105 cursor-pointer"
+                                      >
+                                        <img src="/assets/correct-button.png" alt="Correct Button" className="w-full h-auto" />
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                          <span className="text-white font-bold text-xl drop-shadow-lg">
+                                            ✅ Doğru Bildi
+                                          </span>
+                                        </div>
+                                      </button>
+                                      
+                                      <button
+                                        onClick={() => handleAnswerClick("wrong")}
+                                        className="relative group transition-transform hover:scale-105 cursor-pointer"
+                                      >
+                                        <img src="/assets/wrong-button.png" alt="Wrong Button" className="w-full h-auto" />
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                          <span className="text-white font-bold text-xl drop-shadow-lg">
+                                            ❌ Yanlış Bildi
+                                          </span>
+                                        </div>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-2 gap-4 w-full max-w-2xl mx-auto">
+                              {gameState.currentQuestionData.options && Object.entries(gameState.currentQuestionData.options).map(([key, text]) => {
+                                if (!text) return null
+                                
+                                let buttonImage = "/assets/genel-buton.png"
+                                
+                                if (gameState.answerResult && gameState.selectedAnswer) {
+                                  if (key === gameState.selectedAnswer) {
+                                    buttonImage = gameState.answerResult === "correct" ? "/assets/correct-button.png" : "/assets/wrong-button.png"
+                                  } else if (key === gameState.correctAnswer && gameState.answerResult === "wrong") {
+                                    buttonImage = "/assets/correct-button.png"
+                                  }
+                                }
+
+                                return (
+                                  <button
+                                    key={key}
+                                    onClick={() => !gameState.answerResult && handleAnswerClick(key)}
+                                    disabled={!!gameState.answerResult}
+                                    className={`relative group transition-transform hover:scale-105 ${
+                                      gameState.selectedAnswer === key ? "scale-105" : ""
+                                    } ${gameState.answerResult ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                  >
+                                    <img src={buttonImage} alt="Answer Button" className="w-full h-auto" />
+                                    <div className="absolute inset-0 flex items-center justify-center px-4">
+                                      <span className="text-white font-bold text-xl drop-shadow-lg text-center line-clamp-2 max-w-full overflow-hidden">
+                                        {key}) {text}
+                                      </span>
+                                    </div>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -739,48 +927,6 @@ export default function GameApp() {
                 </button>
               </div>
             )}
-
-            <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-8 px-8 pb-12 z-20">
-              {/* Team A */}
-              <div className={`relative ${gameState.currentTurn === 'A' ? 'animate-gentle-bounce' : ''}`}>
-                <img 
-                  src={gameState.currentTurn === 'A' ? "/assets/correct-button.png" : "/assets/genel-buton.png"} 
-                  alt="Team A Score" 
-                  className={`h-20 w-auto min-w-[240px] transition-all ${gameState.currentTurn === 'A' ? 'drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]' : ''}`}
-                />
-                <div className="absolute inset-0 flex items-center justify-center gap-2">
-                  <img
-                    src={gameState.teams[0].character?.image || "/assets/hero-2.png"}
-                    alt="Team A Character"
-                    className="h-10 w-10"
-                  />
-                  <span className="text-white font-bold text-sm drop-shadow-lg">
-                    TAKIM A
-                  </span>
-                  <span className="text-white font-bold text-lg drop-shadow-lg">{gameState.teams[0].ladderPosition}</span>
-                </div>
-              </div>
-
-              {/* Team B */}
-              <div className={`relative ${gameState.currentTurn === 'B' ? 'animate-gentle-bounce' : ''}`}>
-                <img 
-                  src={gameState.currentTurn === 'B' ? "/assets/correct-button.png" : "/assets/genel-buton.png"} 
-                  alt="Team B Score" 
-                  className={`h-20 w-auto min-w-[240px] transition-all ${gameState.currentTurn === 'B' ? 'drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]' : ''}`}
-                />
-                <div className="absolute inset-0 flex items-center justify-center gap-2">
-                  <img
-                    src={gameState.teams[1].character?.image || "/assets/hero-1.png"}
-                    alt="Team B Character"
-                    className="h-10 w-10"
-                  />
-                  <span className="text-white font-bold text-sm drop-shadow-lg">
-                    TAKIM B
-                  </span>
-                  <span className="text-white font-bold text-lg drop-shadow-lg">{gameState.teams[1].ladderPosition}</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )
