@@ -117,7 +117,7 @@ export const convertGameQuestionToQuestion = (gameQuestion: any): any => {
   return gameQuestion
 }
 
-// Determine game winner
+// Determine game winner - only based on reaching target during game
 export const determineWinner = <T extends { id: 'A' | 'B'; ladderPosition: number }>(
   teams: T[],
   target: number
@@ -139,6 +139,19 @@ export const determineWinner = <T extends { id: 'A' | 'B'; ladderPosition: numbe
   if (aReached) return 'A'
   if (bReached) return 'B'
   
-  // No one reached target yet - return 'tie' to continue game
+  // No one reached target - game continues
+  return 'tie'
+}
+
+// Determine final winner when game ends (all questions answered)
+export const determineFinalWinner = <T extends { id: 'A' | 'B'; ladderPosition: number }>(
+  teams: T[]
+): 'A' | 'B' | 'tie' => {
+  const teamA = teams.find(t => t.id === 'A')!
+  const teamB = teams.find(t => t.id === 'B')!
+  
+  // Compare final positions
+  if (teamA.ladderPosition > teamB.ladderPosition) return 'A'
+  if (teamB.ladderPosition > teamA.ladderPosition) return 'B'
   return 'tie'
 }

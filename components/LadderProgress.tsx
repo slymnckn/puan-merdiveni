@@ -31,39 +31,30 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
       return // Hiçbir şey yapma, animatedSteps zaten stepsGained
     }
     
-    // Doğru cevap durumu: Adım adım zıplama animasyonu
+    // Doğru cevap durumu: Önce karakter görünsün, sonra animasyon başlasın
     if (stepsGained > 0 && correctTeam) {
-      console.log('✅ Doğru cevap - animasyon başlıyor')
+      console.log('✅ Doğru cevap - karakter görünüyor...')
       
-      // İlk adımı hemen başlat
-      const performJump = (currentStep: number) => {
-        if (currentStep > stepsGained) {
-          console.log(`⚠️ currentStep (${currentStep}) > stepsGained (${stepsGained}), durduruluyor`)
-          return
-        }
+      // 500ms bekle: Karakter tam görünsün
+      const initialDelay = setTimeout(() => {
+        console.log('🎬 Animasyon başlıyor!')
         
-        console.log(`🐾 Adım ${currentStep}/${stepsGained} başlıyor`)
-        
-        // ÖNEMLİ: Pozisyonu FRAME BAŞLAMADAN güncelle (böylece animasyon doğru pozisyonda oynar)
-        setAnimatedSteps(currentStep)
-        
-        // İLK BASAMAK (1. adım): Sadece ortaya çık, animasyon yok
-        if (currentStep === 1) {
-          console.log(`  ℹ️ İlk basamak - animasyon yok, sadece görünür oluyor`)
-          setIsJumping(false)
-          
-          // Bir sonraki adıma geç (eğer varsa)
-          if (currentStep < stepsGained) {
-            console.log(`    ⏱️ 300ms sonra Adım ${currentStep + 1}'e geçiliyor`)
-            const nextTimeout = setTimeout(() => performJump(currentStep + 1), 300)
-            timeoutsRef.current.push(nextTimeout)
-          } else {
-            console.log('🎉 Tüm animasyon tamamlandı!')
+        // İlk adımı başlat
+        const performJump = (currentStep: number) => {
+          if (currentStep > stepsGained) {
+            console.log(`⚠️ currentStep (${currentStep}) > stepsGained (${stepsGained}), durduruluyor`)
+            return
           }
-          return
-        }
+          
+          console.log(`🐾 Adım ${currentStep}/${stepsGained} başlıyor`)
+          
+          // ÖNEMLİ: Pozisyonu FRAME BAŞLAMADAN güncelle (böylece animasyon doğru pozisyonda oynar)
+          setAnimatedSteps(currentStep)
+          
+          // TÜM BASAMAKLAR: Frame animasyonu göster (500ms bekledikten sonra)
+          setIsJumping(true)
         
-        // 2. BASAMAK ve SONRASI: Frame animasyonu göster
+        // Frame animasyonu (3 frame)
         setIsJumping(true)
         
         // Frame animasyonu (3 frame)
@@ -104,7 +95,10 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
         playFrame(1)
       }
       
-      performJump(1) // İlk adımı başlat
+        performJump(1) // İlk adımı başlat
+      }, 500) // 500ms bekle: Karakter önce görünsün
+      
+      timeoutsRef.current.push(initialDelay)
     }
     
     // Cleanup: Component unmount olduğunda tüm timeout'ları temizle
@@ -360,11 +354,12 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
         className="absolute z-20 transition-all duration-500"
         style={{
           ...positionStyle,
-          transform: team === "B" ? 'scaleX(-1)' : undefined, // Takım B: Yansıt (sola baksın)
+          transform: team === "B" ? 'scaleX(-1)' : undefined, // Takım B: Tüm container'ı yansıt
           opacity: showAnimation ? 1 : 0,
           scale: showAnimation ? 1 : 0
         }}
       >
+        {/* Karakter görseli ve glow */}
         <div className={`relative ${jumpClass} ${idleBounceClass}`}>
           {/* Arka planda doğal glow efekti */}
           <div 
@@ -386,16 +381,21 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
                 : character.image
             }
             alt={character.name}
-            className="w-16 h-16 md:w-20 md:h-20 rounded-full object-contain p-1"
+            className="w-20 h-20 md:w-24 md:h-24 rounded-full object-contain p-1"
             style={{
               filter: 'drop-shadow(0 0 6px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.2)) drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
             }}
           />
           
-          {/* Team indicator - küçük rozet */}
-          <div className={`absolute -top-1 -right-1 w-6 h-6 md:w-7 md:h-7 rounded-full ${
-            team === "A" ? 'bg-blue-600' : 'bg-pink-600'
-          } border-2 border-white flex items-center justify-center shadow-lg`}>
+          {/* Team indicator - Badge içeride ama ters çevrilmiş */}
+          <div 
+            className={`absolute -top-1 -right-1 w-6 h-6 md:w-7 md:h-7 rounded-full ${
+              team === "A" ? 'bg-blue-600' : 'bg-pink-600'
+            } border-2 border-white flex items-center justify-center shadow-lg`}
+            style={{
+              transform: team === "B" ? 'scaleX(-1)' : undefined // Badge'i tekrar ters çevir
+            }}
+          >
             <span className="text-white font-bold text-[10px] md:text-xs">{team}</span>
           </div>
         </div>
