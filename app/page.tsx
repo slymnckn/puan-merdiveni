@@ -542,7 +542,7 @@ export default function GameApp() {
                 <img src="/assets/sure.png" alt="Timer" className="h-14 w-auto" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-amber-900 font-bold text-xl drop-shadow-sm">
-                    {gameState.settings.gameMode === "timed" ? gameState.timeLeft : "---"}
+                    Süre: {gameState.settings.gameMode === "timed" ? gameState.timeLeft : "---"}
                   </span>
                 </div>
               </div>
@@ -554,9 +554,24 @@ export default function GameApp() {
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6" style={{ paddingTop: '65px' }}>
                   {gameState.currentQuestionData && (
                     <div className="w-full text-center">
-                      <h2 className="text-white text-2xl font-bold mb-6 drop-shadow-lg">
-                        Soru: {gameState.currentQuestionData.question_text}
-                      </h2>
+                      <div className="mb-6 space-y-4">
+                        <h2 className="text-white text-2xl font-bold drop-shadow-lg">
+                          Soru: {gameState.currentQuestionData.question_text}
+                        </h2>
+                        
+                        {/* Görsel varsa göster */}
+                        {gameState.currentQuestionData.image_url && (
+                          <div className="flex justify-center">
+                            <div className="bg-white p-2 rounded-lg shadow-lg w-48">
+                              <img
+                                src={gameState.currentQuestionData.image_url}
+                                alt="Soru görseli"
+                                className="w-full h-auto max-h-32 object-contain rounded"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
                       
                       {/* Render different UI based on question type */}
                       {gameState.currentQuestionData.type === "true_false" ? (

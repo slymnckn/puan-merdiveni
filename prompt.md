@@ -375,7 +375,14 @@ User-Agent: WebGame/1.0
 1. **Üst Kısım**
    - Publisher logo
    - Soru sayacı banner
-   - Süre sayacı (süreli modda)
+   - **Süre sayacı (süreli modda):**
+     - Görsel: /assets/sure.png (h-14)
+     - Position: Sağ üst
+     - Text üzerinde: "Süre: XX" (XX = kalan saniye)
+       - Süreli modda: Gerçek sayı (30'dan geriye sayar)
+       - Süresiz modda: "---" gösterilir
+     - Font: text-amber-900, font-bold, text-xl, drop-shadow-sm
+     - **ÖNEMLİ:** Cevap seçildiğinde süre DURUR
 
 2. **Soru Alanı (Orta)**
    - Soru panel: /assets/soru-arkasi.png
@@ -455,6 +462,12 @@ User-Agent: WebGame/1.0
 - Background: /assets/background.png
 - İki bağımsız merdiven: Sol (Takım A), Sağ (Takım B)
 
+**Z-Index Hiyerarşisi (Önden Arkaya):**
+1. **z-50:** Karakterler ve Devam Et Butonu (en önde)
+2. **z-40:** Tebrikler Banner'ı
+3. **z-30:** Soru Sayacı ve Skor Paneli
+4. **z-10:** Basamaklar (arka planda)
+
 **Sliding Window Sistemi:**
 - **Ekranda görünen basamak sayısı:** 10 (sabit)
 - **Başlangıç:** 1-10 arası basamaklar gösterilir
@@ -468,6 +481,7 @@ User-Agent: WebGame/1.0
 - Border-radius: 8px 24px 24px 8px (sol köşeler hafif, sağ köşeler yuvarlak)
 - Box-shadow: Aktif basamakta daha belirgin
 - Border: Aktif → 3px solid rgba(255,215,0,0.6), diğerleri → 2px solid rgba(255,255,255,0.3)
+- **Z-Index:** z-10 (Basamaklar arka planda, karakterlerin altında)
 
 **Renk Paletleri (Her 10 basamakta bir değişir):**
 
@@ -497,6 +511,7 @@ User-Agent: WebGame/1.0
 - Rounded-full, border
 - Her zaman görünür
 - Aktif basamakta yıldız efektleri (✨⭐)
+- **Z-Index:** z-50 (Tebrikler banner'ının üstünde olmalı - banner z-40)
 - **Animasyon (doğru cevap veren takım):**
   - **Yanlış cevap durumu:** 
     - stepsGained = 0 ise HİÇ animasyon yapılmaz
@@ -570,7 +585,8 @@ User-Agent: WebGame/1.0
 
 **Soru Sayacı (Sol üst):**
 - Görsel: /assets/soru-sayac-banneri.png (h-14~20)
-- Position: top-4 left-4, z-30
+- Position: top-4 left-4
+- **Z-Index:** z-30
 - Text: "SORU X/Y"
   - Position: top-[35%] (aşağı indirildi)
   - Font: text-base~xl (büyütüldü), font-bold, text-white
@@ -578,7 +594,8 @@ User-Agent: WebGame/1.0
 
 **Tebrikler Banner'ı (Üstte, ortada):**
 - Görsel: /golden-banner.png
-- Position: top-4, ortalanmış, z-40
+- Position: top-4, ortalanmış
+- **Z-Index:** z-40
 - Animasyon: animate-pulse
 - Text: "TEBRİKLER! +X BASAMAK KAZANDINIZ!"
   - marginTop: -8px (yukarı taşındı)
@@ -587,7 +604,8 @@ User-Agent: WebGame/1.0
 
 **Skor Paneli (Ortada):**
 - Görsel: /score-scroll.png (pergel şeklinde)
-- Position: bottom-32, ortalanmış, z-30
+- Position: bottom-32, ortalanmış
+- **Z-Index:** z-30
 - **Başlık:** "SKOR" (top-[2%], text-amber-900, font-bold)
 - **İçerik (top-[30%]):**
   - 2 takım satırı (space-y-2)
@@ -605,6 +623,7 @@ User-Agent: WebGame/1.0
 
 **Devam Et Butonu:**
 - Alt kısımda ortalanmış
+- **Z-Index:** z-50 (En üstte, tüm elementlerin önünde)
 - w-40 h-12
 - 2 saniye sonra otomatik tıklanabilir
 
@@ -705,7 +724,7 @@ Seçenekler:
 **Layout:**
 - Fixed inset-0, h-screen, w-screen
 - Background: /assets/background.png
-- Confetti animasyonu (40 parça, farklı renkler, sürekli düşüş)
+- Confetti animasyonu (40 parça, farklı renkler, sürekli düşüş) - SADECE kazanan durumunda
 
 **Bileşenler:**
 
@@ -720,18 +739,31 @@ Seçenekler:
    - Panel görseli: /assets/soru-arkasi.png
    - max-w-xl, maxHeight: 480px
    
-   - **Podium (Yukarıdan aşağıya):**
+   - **KAZANAN DURUMUNDA - Podium:**
      
      **1. Sıra (Kazanan):**
-     - Taç emoji: 👑 (text-4xl, -top-5 pozisyonunda, bounce animasyonu)
-     - Karakter görseli: w-20 h-20, rounded-full, border-4 border-yellow-400
-     - Pulse animasyonu
-     - Kupa emoji: 🏆 (text-3xl, sağ alt köşede)
-     - Podium: w-20 h-20, gradient (yellow-600 → yellow-300)
+     - **Glow Efekti:** 
+       - Radial gradient (altın sarısı → transparent)
+       - width/height: 120px, rounded-full
+       - blur-2xl, opacity-60
+       - Pulse animasyonu (scale 1 ↔ 1.15, 2s)
+       - Merkezde konumlandırılmış (translate -50%, -50%)
+     - Karakter görseli: w-24 h-24, object-contain
+       - Pulse animasyonu (büyüyüp küçülme, 2s)
+       - Çember YOK, border YOK, taç YOK
+     - Kupa emoji: 🏆 (text-3xl, sağ alt köşede, z-20)
+     - Podium: w-20 h-20, gradient (yellow-600 → yellow-300), rounded-t-lg
      - Üzerinde "1" (text-amber-900, text-2xl, font-bold)
      
      **2. Sıra (Kaybeden):**
-     - Karakter görseli: w-14 h-14, border-2 border-gray-400
+     - **Glow Efekti:**
+       - Radial gradient (gri → transparent)
+       - width/height: 80px, rounded-full
+       - blur-xl, opacity-40
+       - Statik (animasyon yok)
+       - Merkezde konumlandırılmış
+     - Karakter görseli: w-14 h-14, object-contain
+       - Çember YOK, border YOK
      - Podium: w-16 h-14, gradient (gray-500 → gray-300)
      - Üzerinde "2" (text-white, text-lg)
      
@@ -739,28 +771,78 @@ Seçenekler:
      - Podium: w-16 h-10, gradient (amber-700 → amber-500)
      - Üzerinde "3" (text-white, text-base)
 
+   - **BERABERLIK DURUMUNDA:**
+     - Başlık: "BERABERLIK!" (text-4xl, text-yellow-400, font-bold, mb-12)
+     - İki karakter yan yana:
+       - Takım A: w-32 h-32, object-contain
+       - Takım adı altında: bg-blue-600, rounded-full, px-4 py-2
+       - Ortada: 🤝 emoji (text-5xl, animate-bounce, ml-8)
+       - Takım B: w-32 h-32, object-contain
+       - Takım adı altında: bg-pink-600, rounded-full, px-4 py-2
+
    **Sağ Panel: Final Skor**
-   - Panel görseli: /assets/soru-arkasi.png
+   - Panel görseli: /score-scroll.png
    - max-w-lg, maxHeight: 580px
    
-   - Başlık: "🏆 FİNAL SKORU 🏆" (text-yellow-400, font-bold, text-2xl)
+   - Başlık: "FİNAL SKOR" (text-amber-900, font-bold, text-2xl, üstte)
    
-   - **Her Takım Satırı (Dikey):**
-     - Takım adı: text-xl, font-bold
-     - Karakter görseli: w-16 h-16, rounded-full
-     - Basamak sayısı: text-lg
-     - Kazanan: Altın renk efekti
-     - Kaybeden: Gri ton
+   - **Her Takım Satırı:**
+     - Karakter görseli: w-10 h-10, rounded-full, border-2
+     - Takım adı: text-amber-900, font-bold, text-base
+     - Basamak bilgisi: text-amber-800, font-semibold, text-sm
+     - Kazanan: 👑 emoji solda (index === 0 && !isTie)
+     - Sıralama: ladderPosition'a göre büyükten küçüğe
 
 3. **Alt Kısım: Tekrar Oyna Butonu**
    - Görsel: /assets/genel-buton.png
-   - w-48 h-14
+   - h-14, min-width: 220px
    - Üzerinde "TEKRAR OYNA" (text-white, font-bold, text-lg)
-   - Hover: scale-110, glow efekti
+   - Hover: scale-105, Active: scale-95
+
+**Kazanan Belirleme Mantığı:**
+```typescript
+// İki fonksiyon kullanılır:
+1. determineWinner(teams, target): Hedefe ulaşan varsa kazananı döner
+   - Biri hedefe ulaştıysa → O takım kazanır
+   - Kimse ulaşmadıysa → 'tie' (oyun devam eder)
+
+2. determineFinalWinner(teams): Final pozisyonlara göre kazanan
+   - teamA.ladderPosition > teamB → 'A' kazanır
+   - teamB.ladderPosition > teamA → 'B' kazanır
+   - Eşitse → 'tie'
+
+// GameResults'ta:
+const targetWinner = determineWinner(teams, target)
+if (targetWinner !== 'tie') return targetWinner
+return determineFinalWinner(teams) // Sorular bittiyse
+```
+
+**CSS Animasyonlar:**
+```css
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes glow {
+  0%, 100% { 
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% { 
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+}
+```
 
 **Önemli Notlar:**
-- Oyun istatistikleri KALDIRILDI (toplam soru, mod, sürpriz bilgileri gösterilmiyor)
-- Beraberlik durumunda: "BERABERE!" mesajı, her iki takım da podiumda eşit gösterilir
+- Oyun istatistikleri KALDIRILDI
+- Karakterler çembersiz, doğal halleriyle görünür
+- Glow efektleri radial gradient ile doğal, yumuşak
+- Kazanan karakterde altın glow + pulse animasyonu
+- 2. karakterde gri glow (statik)
+- Beraberlikte her iki karakter eşit büyüklükte, ortada 🤝 ikonu
 
 ---
 
@@ -878,14 +960,31 @@ Seçenekler:
 ### 5.4 Oyun Bitişi Koşulları
 ```
 Oyun BİTER:
-1. Bir takımın ladderPosition >= ladderTarget
+1. Bir takımın ladderPosition >= ladderTarget (Hedefe ulaştı)
    VEYA
-2. currentQuestion >= totalQuestions (tüm sorular bitti)
+2. currentQuestion >= totalQuestions (Tüm sorular bitti)
 
-Kazanan Belirleme:
-- Hedefe ulaşan varsa → O takım kazanır
-- Sorular bittiyse → Daha yüksekteki takım kazanır
-- Eşit pozisyondalarsa → Beraberlik
+Kazanan Belirleme (İki Aşamalı):
+
+1. determineWinner(teams, target) - Oyun sırasında kontrol
+   - Bir takım hedefe ulaştıysa → O takım kazanır
+   - İki takım da hedefe ulaştıysa → Daha yüksek pozisyonda olan kazanır
+   - Kimse hedefe ulaşmadıysa → 'tie' döner (oyun devam eder)
+
+2. determineFinalWinner(teams) - Sorular bittiğinde
+   - teamA.ladderPosition > teamB.ladderPosition → 'A' kazanır
+   - teamB.ladderPosition > teamA.ladderPosition → 'B' kazanır
+   - Eşitse → 'tie' (beraberlik)
+
+GameResults ekranında:
+const targetWinner = determineWinner(teams, target)
+if (targetWinner !== 'tie') return targetWinner
+return determineFinalWinner(teams) // Sorular bitti, pozisyona bak
+
+ÖNEMLİ: handleContinueFromLadder'da oyun bitişi kontrolü:
+const winner = determineWinner(gameState.teams, gameState.ladderTarget)
+const questionsExhausted = gameState.currentQuestion >= gameState.settings.questionCount
+const shouldEndGame = (winner !== 'tie') || questionsExhausted
 ```
 
 ### 5.5 Puan Hesaplama (Süreli Mod)
@@ -1223,7 +1322,222 @@ function determineWinner(teams: Team[], target: number): "A" | "B" | "tie" {
 
 ---
 
-## 11. SONUÇ
+## 11. SON GÜNCELLEMELER (04.01.2025)
+
+### Merdiven Animasyon Sistemi
+
+#### Frame Animasyon
+- **Desteklenen Karakterler:** hizli-kedi, minik-dinazor, sihirbaz, tekno-robot, uzay-kasifi, zeka-ustasi
+- **Frame Yapısı:** Her karakter için 3 frame (`1.png`, `2.png`, `3.png`)
+- **Klasör Yapısı:** `/public/hero/animation/[karakter-id]/`
+- **Frame Timing:**
+  - Frame 1: 100ms
+  - Frame 2: 150ms
+  - Frame 3: 100ms
+  - Toplam: 350ms per basamak
+- **Adımlar Arası:** 150ms bekleme
+
+#### Animasyon Akışı
+1. **Başlangıç:** Karakter fade-in (500ms)
+2. **500ms Bekleme:** Karakter tam görünür
+3. **Adım 1:** Pozisyon 1'e atla + 3 frame animasyon
+4. **150ms ara**
+5. **Adım 2:** Pozisyon 2'ye atla + 3 frame animasyon
+6. **150ms ara**
+7. **Adım 3:** Pozisyon 3'e atla + 3 frame animasyon
+8. **Bitti**
+
+#### Takım B Yansıtma
+- **Parent Container:** `transform: scaleX(-1)` (Takım B için)
+- **Badge:** `transform: scaleX(-1)` (Tekrar ters çevir, text düz görünsün)
+- **Sonuç:** Karakter sola bakar, badge düz
+
+#### Karakter Özellikleri
+- **Boyut:** `w-20 h-20` (küçük ekran), `w-24 h-24` (büyük ekran)
+- **80px × 80px** (küçük), **96px × 96px** (büyük)
+- **object-contain:** Karakterler kesilmeden gösterilir
+- **Glow Efekti:** Doğal renkli glow (mavi/pembe)
+
+#### Aktif Karakter Bounce
+- **Aktif Takım:** `currentQuestion % 2 === 1 ? "A" : "B"`
+- **Bounce Animasyon:** 8px yukarı-aşağı, 1.5s döngü, infinite
+- **CSS:** `animate-idle-bounce`
+- **Durum:** Basamak çıkma animasyonu yokken aktif
+
+#### Yanlış Cevap Bug Fix
+- **Sorun:** `stepsGained` state'i yanlış cevap durumunda 0'a set edilmiyordu
+- **Çözüm:** `else { setStepsGained(0) }` eklendi (`page.tsx` line 286-288)
+- **Component Cleanup:** useRef ile timeout'lar takip edilip temizleniyor
+- **React Strict Mode:** Çift mount desteği (cleanup ile)
+
+### Beraberlik Ekranı
+
+#### Layout
+```
+┌──────────────────────────┐
+│                          │
+│      BERABERLIK!         │  ← Başlık (yukarıda)
+│                          │
+│   🧙‍♂️    🤝    🧙‍♂️        │  ← Karakterler + İkon
+│  TAKIM A      TAKIM B    │
+│                          │
+└──────────────────────────┘
+```
+
+#### Özellikler
+- **Başlık:** "BERABERLIK!" (text-4xl, yellow-400)
+- **Container marginTop:** 20px
+- **Başlık margin-bottom:** 12 (mb-12)
+- **Karakterler marginTop:** -20px
+- **Karakterler arası gap:** 16 (gap-16)
+- **🤝 İkon:** text-5xl, mb-16, animate-bounce
+- **Karakter Boyutu:** w-32 h-32 (128px × 128px)
+- **Çember Yok:** object-contain, border yok
+- **Skor Bilgisi Yok:** Sadece karakterler ve takım isimleri
+
+#### Final Skor Paneli (Beraberlik)
+- **Başlık:** "FİNAL SKOR" (her durumda)
+- **👑 İkonu:** Beraberlikte görünmez
+- **Tüm Skorlar:** Her iki takım eşit şekilde listelenir
+
+#### Winner Durumu
+- **Sol Panel:** Podyum + Taç + Kupa
+- **Sağ Panel:** 👑 ikonu kazanan takımda
+- **Confetti:** Sadece kazanan durumunda
+
+### Kod Yapısı
+
+#### LadderProgress.tsx
+```typescript
+// State
+const timeoutsRef = useRef<NodeJS.Timeout[]>([]) // Timeout tracking
+const [animatedSteps, setAnimatedSteps] = useState(
+  stepsGained === 0 || !correctTeam ? stepsGained : 0
+)
+const [isJumping, setIsJumping] = useState(false)
+const [jumpFrame, setJumpFrame] = useState(1)
+
+// useEffect - 500ms delay before animation
+useEffect(() => {
+  setShowAnimation(true)
+  if (stepsGained === 0 || !correctTeam) return
+  
+  const initialDelay = setTimeout(() => {
+    performJump(1)
+  }, 500)
+  
+  timeoutsRef.current.push(initialDelay)
+  
+  return () => {
+    timeoutsRef.current.forEach(timeout => clearTimeout(timeout))
+    timeoutsRef.current = []
+  }
+}, [])
+
+// Frame animasyon için karakter kontrolü
+(character.id === 'hizli-kedi' || character.id === 'minik-dinazor' || 
+ character.id === 'sihirbaz' || character.id === 'tekno-robot' ||
+ character.id === 'uzay-kasifi' || character.id === 'zeka-ustasi')
+  ? `/hero/animation/${character.id}/${jumpFrame}.png`
+  : character.image
+```
+
+#### GameResults.tsx
+```typescript
+// Beraberlik kontrolü
+const winnerResult = determineWinner(gameState.teams, gameState.ladderTarget)
+const isTie = winnerResult === 'tie'
+const winner = !isTie ? gameState.teams.find(team => team.id === winnerResult) : null
+
+// Takımlar
+const teamA = gameState.teams.find(t => t.id === "A")
+const teamB = gameState.teams.find(t => t.id === "B")
+
+// Confetti sadece kazanan durumunda
+{showCelebration && !isTie && (
+  <div className="confetti">...</div>
+)}
+```
+
+#### page.tsx
+```typescript
+// Yanlış cevap fix
+if (isCorrect) {
+  const steps = calculateStepsGained(gameState.timeLeft, gameState.settings.gameMode)
+  setStepsGained(steps)
+  setLastCorrectTeam(currentTeam)
+} else {
+  setStepsGained(0) // ← YENİ: Yanlış cevap = 0 basamak
+}
+
+// LadderProgress key prop (force remount)
+<LadderProgress
+  key={`ladder-${gameState.currentQuestion}`}
+  gameState={gameState}
+  onContinue={handleContinueFromLadder}
+  stepsGained={stepsGained}
+  correctTeam={stepsGained > 0 ? lastCorrectTeam : null}
+/>
+```
+
+### CSS Animasyonlar (globals.css)
+
+```css
+/* Merdiven basamak çıkma */
+@keyframes ladder-jump {
+  0% { transform: translateY(0) scale(1); }
+  15% { transform: translateY(-20px) scale(1.1); }
+  30% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(-15px) scale(1.08); }
+  60% { transform: translateY(0) scale(1); }
+  75% { transform: translateY(-10px) scale(1.05); }
+  90% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+.animate-ladder-jump {
+  animation: ladder-jump 1.5s ease-out forwards;
+}
+
+/* Aktif karakter bounce */
+@keyframes idle-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-idle-bounce {
+  animation: idle-bounce 1.5s ease-in-out infinite;
+}
+```
+
+### Bilinen Sorunlar ve Çözümler
+
+#### 1. React Strict Mode Çift Mount
+- **Sorun:** Development'ta component iki kere mount oluyor
+- **Çözüm:** useEffect cleanup fonksiyonu ile timeout'ları temizleme
+- **Kod:** `useRef` + `return () => clearTimeout`
+
+#### 2. Yanlış Cevap Animasyon Tekrarı
+- **Sorun:** Yanlış cevap durumunda eski animasyon tekrarlıyordu
+- **Kök Neden:** `stepsGained` state'i güncellenmiyordu
+- **Çözüm:** `else { setStepsGained(0) }`
+
+#### 3. Son Basamak Tek Frame
+- **Sorun:** Son basamakta sadece 1 frame gösteriliyordu
+- **Kök Neden:** `setAnimatedSteps(currentStep)` çok erken çağrılıyordu
+- **Çözüm:** `setAnimatedSteps`'i performJump başında çağır
+
+#### 4. İlk Basamak Animasyon Yok
+- **Sorun:** İlk basamakta animasyon yoktu (özel durum kodu vardı)
+- **Çözüm:** 500ms bekleme eklendi, özel durum kaldırıldı
+
+#### 5. Takım B Badge Ters
+- **Sorun:** Karakter yansıtılınca badge de ters dönüyordu
+- **Çözüm:** Badge'e de `scaleX(-1)` (çift negatif = pozitif)
+
+---
+
+## 12. SONUÇ
 
 Bu spesifikasyon, "Puan Merdiveni" oyununu sıfırdan inşa etmek için gereken TÜM bilgileri içerir. Tüm ekranlar, boyutlar, renkler, animasyonlar, API entegrasyonları, oyun mantığı ve veri yapıları detaylı olarak tanımlanmıştır.
 

@@ -161,7 +161,7 @@ class ApiService {
         },
         correct_answer: "B",
         publisher_id: 0,
-        image_url: undefined
+        image_url: "/wise-owl-character.jpg"
       },
       {
         id: 2,
@@ -189,7 +189,7 @@ class ApiService {
         },
         correct_answer: "C",
         publisher_id: 0,
-        image_url: undefined
+        image_url: "/friendly-robot.png"
       },
       {
         id: 4,

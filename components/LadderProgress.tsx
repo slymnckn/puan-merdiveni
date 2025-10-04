@@ -351,7 +351,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
 
     return (
       <div
-        className="absolute z-20 transition-all duration-500"
+        className="absolute z-50 transition-all duration-500"
         style={{
           ...positionStyle,
           transform: team === "B" ? 'scaleX(-1)' : undefined, // Takım B: Tüm container'ı yansıt
