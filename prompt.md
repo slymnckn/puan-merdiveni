@@ -498,10 +498,59 @@ User-Agent: WebGame/1.0
 - Her zaman görünür
 - Aktif basamakta yıldız efektleri (✨⭐)
 - **Animasyon (doğru cevap veren takım):**
-  - `animate-gentle-bounce` class'ı eklenir
-  - Hafif yukarı-aşağı hareket (translateY: 0 → -5px → 0)
-  - Duration: 2s, ease-in-out, infinite
-  - Sadece o anda hareket eden karakterde aktif
+  - **Yanlış cevap durumu:** 
+    - stepsGained = 0 ise HİÇ animasyon yapılmaz
+    - correctTeam = null gönderilir (page.tsx'te: stepsGained > 0 ? lastCorrectTeam : null)
+    - Her iki karakter de kendi pozisyonunda SABİT durur
+    - animatedSteps başlangıçta stepsGained'e eşit olur (0)
+  - **Doğru cevap durumu:** 
+    - stepsGained > 0 ve correctTeam = "A" | "B" gönderilir
+    - Sadece doğru cevap veren takımın karakteri animasyon yapar
+    - Diğer takım sabit durur
+  - **Adım adım zıplama sistemi:**
+    - Karakter başlangıç pozisyonundan başlar
+    - Her basamağı teker teker zıplayarak çıkar
+    - Örnek: 3 basamak kazandıysa → 3 kez zıplar
+    - Her zıplama arası: 500ms bekleme
+    - Her zıplama süresi: 300ms
+  - **Frame animasyonu (Hızlı Kedi için):**
+    - 3 frame'li sprite animasyon
+    - Frame görselleri: /hero/animation/hizli-kedi/1.png ~ 3.png
+    - Frame süreleri: 
+      * Frame 1: 100ms
+      * Frame 2: 150ms (daha uzun - zıplamanın tepesi)
+      * Frame 3: 100ms
+    - Toplam süre: 350ms
+    - Frame sırası: 1 → 2 → 3 → tekrar 1
+    - Sadece zıplarken aktif (isJumping=true)
+    - Diğer zamanlarda normal görsel gösterilir
+  - **Zıplama animasyonu (`animate-ladder-jump`):**
+    - 3 kademeli zıplama: 20px → 15px → 10px
+    - Her zıplamada hafif scale efekti (1.1 → 1.08 → 1.05)
+    - Duration: 1.5s, ease-out, forwards
+  - **State yönetimi:**
+    - `animatedSteps`: Kaç basamak animasyon tamamlandı
+      * Yanlış cevap (stepsGained = 0): animatedSteps = 0 → pozisyon sabit
+      * Doğru cevap (stepsGained > 0 && correctTeam): animatedSteps = 0'dan başla → animasyon yap
+      * Doğru cevap yoksa: animatedSteps = stepsGained → pozisyon sabit (animasyon yok)
+    - `isJumping`: Zıplama animasyonu aktif mi?
+    - `jumpFrame`: Şu anki frame numarası (1-3)
+    - Position hesaplaması: 
+      * Animasyon yoksa: displayPosition = basePosition
+      * Animasyon varsa: displayPosition = basePosition - stepsGained + animatedSteps
+  - **Animasyon kontrolü:**
+    - useEffect sadece ilk mount'ta çalışır (dependency: [])
+    - stepsGained > 0 && correctTeam kontrolü
+    - Her frame tamamlandığında animatedSteps artırılır
+  - **Karakter görünürlüğü:**
+    - Karakter her zaman görünür (baseTeamPosition > 0 ise)
+    - **Yanlış cevap:** Her iki karakter de kendi pozisyonunda sabit
+    - **Doğru cevap, animasyon bitti:** baseTeamPosition'da sabit
+    - **Doğru cevap, animasyon devam ediyor:** Başlangıçtan (basePosition - stepsGained) adım adım çıkar
+  - **Pozisyon hesaplama:**
+    - Yanlış cevap veya diğer takım: `displayPosition = baseTeamPosition`
+    - Animasyon devam ediyor: `displayPosition = baseTeamPosition - stepsGained + animatedSteps`
+    - Animasyon bitti: `displayPosition = baseTeamPosition`
   - Diğer takımın karakteri statik
 
 **Karakter Boyutları:**

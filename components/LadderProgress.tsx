@@ -1,21 +1,119 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import type { GameState } from "@/types/game"
 
 interface LadderProgressProps {
   gameState: GameState
   onContinue: () => void
   stepsGained: number
-  correctTeam: "A" | "B"
+  correctTeam: "A" | "B" | null
 }
 
 export default function LadderProgress({ gameState, onContinue, stepsGained, correctTeam }: LadderProgressProps) {
   const [showAnimation, setShowAnimation] = useState(false)
+  const timeoutsRef = useRef<NodeJS.Timeout[]>([]) // Timeout'ları takip et
+  
+  // Yanlış cevap ise animatedSteps = stepsGained (tamamlanmış), doğru cevap ise 0 (animasyon başlayacak)
+  const [animatedSteps, setAnimatedSteps] = useState(
+    stepsGained === 0 || !correctTeam ? stepsGained : 0
+  )
+  const [isJumping, setIsJumping] = useState(false)
+  const [jumpFrame, setJumpFrame] = useState(1)
 
   useEffect(() => {
+    console.log('🎬 LadderProgress mounted:', { stepsGained, correctTeam, animatedSteps })
     setShowAnimation(true)
-  }, [])
+    
+    // Yanlış cevap durumu: Animasyon yok
+    if (stepsGained === 0 || !correctTeam) {
+      console.log('❌ Yanlış cevap - animasyon yok')
+      return // Hiçbir şey yapma, animatedSteps zaten stepsGained
+    }
+    
+    // Doğru cevap durumu: Adım adım zıplama animasyonu
+    if (stepsGained > 0 && correctTeam) {
+      console.log('✅ Doğru cevap - animasyon başlıyor')
+      
+      // İlk adımı hemen başlat
+      const performJump = (currentStep: number) => {
+        if (currentStep > stepsGained) {
+          console.log(`⚠️ currentStep (${currentStep}) > stepsGained (${stepsGained}), durduruluyor`)
+          return
+        }
+        
+        console.log(`🐾 Adım ${currentStep}/${stepsGained} başlıyor`)
+        
+        // ÖNEMLİ: Pozisyonu FRAME BAŞLAMADAN güncelle (böylece animasyon doğru pozisyonda oynar)
+        setAnimatedSteps(currentStep)
+        
+        // İLK BASAMAK (1. adım): Sadece ortaya çık, animasyon yok
+        if (currentStep === 1) {
+          console.log(`  ℹ️ İlk basamak - animasyon yok, sadece görünür oluyor`)
+          setIsJumping(false)
+          
+          // Bir sonraki adıma geç (eğer varsa)
+          if (currentStep < stepsGained) {
+            console.log(`    ⏱️ 300ms sonra Adım ${currentStep + 1}'e geçiliyor`)
+            const nextTimeout = setTimeout(() => performJump(currentStep + 1), 300)
+            timeoutsRef.current.push(nextTimeout)
+          } else {
+            console.log('🎉 Tüm animasyon tamamlandı!')
+          }
+          return
+        }
+        
+        // 2. BASAMAK ve SONRASI: Frame animasyonu göster
+        setIsJumping(true)
+        
+        // Frame animasyonu (3 frame)
+        // Her frame'in görüntülenme süresi: Frame 1: 100ms, Frame 2: 150ms, Frame 3: 100ms
+        const playFrame = (frameNum: number) => {
+          console.log(`  📸 Frame ${frameNum} (Adım ${currentStep}/${stepsGained})`)
+          setJumpFrame(frameNum)
+          
+          // Her frame'in görüntülenme süresi
+          const frameDuration = frameNum === 2 ? 150 : 100
+          
+          if (frameNum < 3) {
+            // Bir sonraki frame'e geç
+            console.log(`    ⏱️ ${frameDuration}ms sonra Frame ${frameNum + 1}'e geçiliyor`)
+            const timeout = setTimeout(() => playFrame(frameNum + 1), frameDuration)
+            timeoutsRef.current.push(timeout)
+          } else {
+            // Frame 3 tamamlandı - frame'i göster ve bitir
+            console.log(`    ⏱️ Frame 3, ${frameDuration}ms gösterilecek`)
+            const timeout = setTimeout(() => {
+              console.log(`  ✓ Adım ${currentStep} frame animasyonu tamamlandı`)
+              setJumpFrame(1) // Reset to default
+              setIsJumping(false)
+              
+              // Bir sonraki adıma geç
+              if (currentStep < stepsGained) {
+                console.log(`    ⏱️ 150ms sonra Adım ${currentStep + 1}'e geçiliyor`)
+                const nextTimeout = setTimeout(() => performJump(currentStep + 1), 150)
+                timeoutsRef.current.push(nextTimeout)
+              } else {
+                console.log('🎉 Tüm animasyon tamamlandı!')
+              }
+            }, frameDuration) // Frame 3'ü 100ms göster
+            timeoutsRef.current.push(timeout)
+          }
+        }
+        
+        playFrame(1)
+      }
+      
+      performJump(1) // İlk adımı başlat
+    }
+    
+    // Cleanup: Component unmount olduğunda tüm timeout'ları temizle
+    return () => {
+      console.log('🧹 Cleanup: Tüm timeout\'lar temizleniyor')
+      timeoutsRef.current.forEach(timeout => clearTimeout(timeout))
+      timeoutsRef.current = []
+    }
+  }, []) // Sadece ilk mount'ta çalış (component key zaten her soru için yeni instance)
 
   // Dinamik merdiven sistemi - Her takım için ayrı Sliding Window
   const VISIBLE_STEPS = 10 // Ekranda görünecek basamak sayısı (sabit)
@@ -209,16 +307,34 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
 
   // Render team character
   const renderTeamCharacter = (team: "A" | "B") => {
-    const teamPosition = getTeamPosition(team)
+    const baseTeamPosition = getTeamPosition(team)
     const character = getTeamCharacter(team)
     
-    if (!character || teamPosition <= 0) return null
+    if (!character || baseTeamPosition <= 0) return null
+
+    // Pozisyon hesaplama:
+    // 1. Yanlış cevap (stepsGained = 0): baseTeamPosition'da sabit dur
+    // 2. Doğru cevap, animasyon bitti (animatedSteps = stepsGained): baseTeamPosition'da dur
+    // 3. Doğru cevap, animasyon devam ediyor: başlangıçtan adım adım çık
+    let displayPosition = baseTeamPosition
+    
+    // Animasyon devam ediyor MU kontrolü: 
+    // - isJumping: Şu anda frame animasyonu oynatılıyor
+    // - animatedSteps < stepsGained: Henüz tüm adımlar tamamlanmadı
+    const isAnimating = team === correctTeam && stepsGained > 0 && 
+                       (animatedSteps < stepsGained || isJumping)
+    
+    if (isAnimating) {
+      // Animasyon devam ediyor: başlangıçtan (basePosition - stepsGained) adım adım çık
+      displayPosition = baseTeamPosition - stepsGained + animatedSteps
+    }
+    // Aksi durumda: baseTeamPosition'da sabit dur (yanlış cevap veya animasyon bitti)
 
     // Her takım için ayrı visible steps al
     const teamSteps = getVisibleStepsForTeam(team)
     
     // Find current step index in team's visible steps
-    const stepIndex = teamSteps.findIndex((step: number) => step === teamPosition)
+    const stepIndex = teamSteps.findIndex((step: number) => step === displayPosition)
     if (stepIndex === -1) return null
 
     const position = getStepPosition(stepIndex)
@@ -229,12 +345,27 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
     // Doğal glow renkleri - belli belirsiz
     const glowColor = team === "A" ? 'rgba(59, 130, 246, 0.4)' : 'rgba(236, 72, 153, 0.4)'
 
+    // Aktif sıradaki takımı belirle (Soru numarasına göre - tek = A, çift = B)
+    const activeTeam = gameState.currentQuestion % 2 === 1 ? "A" : "B"
+    const isActiveTeam = team === activeTeam
+    
+    // Zıplama animasyonu sadece doğru takımda, stepsGained > 0 ve zıplarken aktif
+    const jumpClass = team === correctTeam && stepsGained > 0 && isJumping ? 'animate-ladder-jump' : ''
+    
+    // Aktif sıradaki karaktere hafif bounce (ama basamak çıkma animasyonu oynarken değil)
+    const idleBounceClass = isActiveTeam && !isJumping ? 'animate-idle-bounce' : ''
+
     return (
       <div
-        className={`absolute z-20 transition-all duration-1000 ${showAnimation ? 'scale-100 opacity-100' : 'scale-0 opacity-0'} ${team === correctTeam ? 'animate-gentle-bounce' : ''}`}
-        style={positionStyle}
+        className="absolute z-20 transition-all duration-500"
+        style={{
+          ...positionStyle,
+          transform: team === "B" ? 'scaleX(-1)' : undefined, // Takım B: Yansıt (sola baksın)
+          opacity: showAnimation ? 1 : 0,
+          scale: showAnimation ? 1 : 0
+        }}
       >
-        <div className="relative">
+        <div className={`relative ${jumpClass} ${idleBounceClass}`}>
           {/* Arka planda doğal glow efekti */}
           <div 
             className="absolute inset-0 -z-10 rounded-full blur-xl"
@@ -246,7 +377,14 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
           />
           
           <img 
-            src={character.image} 
+            src={
+              team === correctTeam && stepsGained > 0 && isJumping && 
+              (character.id === 'hizli-kedi' || character.id === 'minik-dinazor' || 
+               character.id === 'sihirbaz' || character.id === 'tekno-robot' ||
+               character.id === 'uzay-kasifi' || character.id === 'zeka-ustasi')
+                ? `/hero/animation/${character.id}/${jumpFrame}.png`
+                : character.image
+            }
             alt={character.name}
             className="w-16 h-16 md:w-20 md:h-20 rounded-full object-contain p-1"
             style={{

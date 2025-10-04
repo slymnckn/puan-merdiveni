@@ -283,6 +283,9 @@ export default function GameApp() {
             : team,
         ),
       }))
+    } else {
+      // Yanlış cevap durumunda stepsGained'i 0'a set et
+      setStepsGained(0)
     }
 
     // Artık otomatik geçmiyor, kullanıcı "Devam Et" butonuna basacak
@@ -486,12 +489,19 @@ export default function GameApp() {
       return <QuestionReady gameState={gameState} onShowQuestion={handleShowQuestion} currentTurn={gameState.currentTurn} />
 
     case "ladder-progress":
+      console.log('📊 Rendering LadderProgress:', { 
+        stepsGained, 
+        lastCorrectTeam, 
+        correctTeam: stepsGained > 0 ? lastCorrectTeam : null,
+        currentQuestion: gameState.currentQuestion 
+      })
       return (
         <LadderProgress
+          key={`ladder-${gameState.currentQuestion}`} // Her soru için yeni component instance
           gameState={gameState}
           onContinue={handleContinueFromLadder}
           stepsGained={stepsGained}
-          correctTeam={lastCorrectTeam}
+          correctTeam={stepsGained > 0 ? lastCorrectTeam : null}
         />
       )
 
