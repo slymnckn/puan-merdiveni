@@ -135,12 +135,6 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
       A: [
         // Tier 0 (1-10): Mor
         { base: "#5B21B6", light: "#8B5CF6", name: "Mor" },
-        // Tier 1 (11-20): Mavi
-        { base: "#1E40AF", light: "#3B82F6", name: "Mavi" },
-        // Tier 2 (21-30): Yeşil-Mavi
-        { base: "#0F766E", light: "#14B8A6", name: "Turkuaz" },
-        // Tier 3 (31-40): Yeşil
-        { base: "#15803D", light: "#22C55E", name: "Yeşil" },
         // Tier 4 (41-50): Sarı-Yeşil
         { base: "#CA8A04", light: "#EAB308", name: "Sarı" },
         // Tier 5+ (51+): Altın
@@ -153,7 +147,6 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
         { base: "#BE123C", light: "#FB7185", name: "Pembe-Kırmızı" },
         // Tier 2 (21-30): Turuncu
         { base: "#C2410C", light: "#FB923C", name: "Turuncu" },
-        // Tier 3 (31-40): Sarı-Turuncu
         { base: "#CA8A04", light: "#FBBF24", name: "Turuncu-Sarı" },
         // Tier 4 (41-50): Sarı
         { base: "#A16207", light: "#FDE047", name: "Sarı" },
@@ -194,6 +187,15 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
     return targetTeam?.character || null
   }
 
+  const getStepAsset = (stepValue: number): string => {
+    if (stepValue >= 50) return "/steps/level-6.png"
+    if (stepValue >= 40) return "/steps/level-5.png"
+    if (stepValue >= 30) return "/steps/level-4.png"
+    if (stepValue >= 20) return "/steps/level-3.png"
+    if (stepValue >= 10) return "/steps/level-2.png"
+    return "/steps/level-1.png"
+  }
+
   // Render a single step cloud
   const renderStepCloud = (stepValue: number, stepIndex: number, team: "A" | "B") => {
     const position = getStepPosition(stepIndex)
@@ -216,18 +218,17 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
     // Tier'a göre renk al (her 10 basamakta bir değişir)
     const tier = getStepColorTier(stepValue)
     const colorPalette = getColorPalette(tier, team)
-    const baseColor = colorPalette.base
     const lightColor = colorPalette.light
     
     // Opacity kontrolü - geçilmemiş basamaklar soluk
     const opacity = isActiveStep ? 1 : isPassed ? 0.9 : 0.3
-    
-    // Gradient oluştur
-    const gradientStyle = isActiveStep 
-      ? `linear-gradient(135deg, ${lightColor} 0%, ${baseColor} 100%)`
-      : isPassed 
-        ? `linear-gradient(135deg, ${lightColor} 0%, ${baseColor} 100%)`
-        : `linear-gradient(135deg, ${lightColor} 0%, ${baseColor} 100%)`
+    const borderRadius = "12px 32px 32px 12px"
+    const stepImageFilter = isActiveStep
+      ? `brightness(1.1) drop-shadow(0 12px 22px ${lightColor}66)`
+      : isPassed
+        ? 'brightness(0.95) drop-shadow(0 8px 16px rgba(0,0,0,0.35))'
+        : 'brightness(0.85) drop-shadow(0 6px 12px rgba(0,0,0,0.25))'
+    const stepImageSrc = getStepAsset(stepValue)
 
     return (
       <div
@@ -235,30 +236,21 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
         className={`absolute z-10 transition-all duration-1000 ${scaleClass}`}
         style={{ ...positionStyle, opacity }}
       >
-        <div 
-          className="relative flex items-center justify-center shadow-2xl"
-          style={{ 
-            width: `${stepWidth}px`, 
+        <div
+          className="relative flex items-center justify-center"
+          style={{
+            width: `${stepWidth}px`,
             height: `${stepHeight}px`,
-            background: gradientStyle,
-            border: isActiveStep ? '3px solid rgba(255,215,0,0.6)' : '2px solid rgba(255,255,255,0.3)',
-            borderRadius: '8px 24px 24px 8px', // Sol köşeler hafif, sağ köşeler yuvarlak
-            boxShadow: isActiveStep 
-              ? `0 12px 35px ${lightColor}99, inset 0 2px 10px rgba(255,255,255,0.4), 0 0 20px ${lightColor}66` 
-              : '0 6px 20px rgba(0,0,0,0.4), inset 0 1px 3px rgba(255,255,255,0.2)',
-            transform: isActiveStep ? 'translateY(-2px)' : 'none',
-            backdropFilter: 'blur(2px)'
+            transform: isActiveStep ? 'translateY(-2px)' : 'none'
           }}
         >
-          {/* Parlama efekti üst kısımda */}
-          <div 
-            className="absolute top-0 left-2 right-2 h-2 opacity-40"
-            style={{
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)',
-              borderRadius: '8px 24px 0 0'
-            }}
+          <img
+            src={stepImageSrc}
+            alt="Basamak"
+            className="absolute inset-0 w-full h-full object-fill select-none pointer-events-none"
+            style={{ borderRadius, filter: stepImageFilter }}
           />
-          
+
           {/* Yıldız dekorasyonları (görseldeki gibi) */}
           {isActiveStep && (
             <>
@@ -268,9 +260,9 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
               <div className="absolute right-1/4 -top-3 text-yellow-300 text-xs animate-pulse delay-300 drop-shadow-lg">⭐</div>
             </>
           )}
-          
-          <span 
-            className="text-white font-bold text-xl md:text-2xl drop-shadow-lg z-10" 
+
+          <span
+            className="text-white font-bold text-xl md:text-2xl drop-shadow-lg z-10"
             style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}
           >
             {stepValue}
@@ -367,7 +359,6 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
               filter: 'drop-shadow(0 0 6px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.2)) drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
             }}
           />
-          
           {/* Team indicator - Badge içeride ama ters çevrilmiş */}
           <div 
             className={`absolute -top-1 -right-1 w-6 h-6 md:w-7 md:h-7 rounded-full ${
