@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import type { GameState, SurpriseChoice } from "@/types/game"
-import { selectSurpriseChoice } from "@/lib/game-utils"
+import { useAudio } from "@/components/AudioProvider"
 
 interface SurpriseEventProps {
   gameState: GameState
@@ -12,6 +12,7 @@ interface SurpriseEventProps {
 export default function SurpriseEvent({ gameState, onSurpriseComplete }: SurpriseEventProps) {
   const [selectedChoice, setSelectedChoice] = useState<SurpriseChoice | null>(null)
   const [availableChoices, setAvailableChoices] = useState<SurpriseChoice[]>([])
+  const { playSfx } = useAudio()
 
   useEffect(() => {
     if (!gameState.surpriseData) return
@@ -34,6 +35,11 @@ export default function SurpriseEvent({ gameState, onSurpriseComplete }: Surpris
     
     setAvailableChoices(choices)
   }, [gameState.surpriseData])
+
+  useEffect(() => {
+    if (!gameState.surpriseData) return
+    playSfx("surprise")
+  }, [gameState.surpriseData, playSfx])
 
   if (!gameState.surpriseData) return null
 

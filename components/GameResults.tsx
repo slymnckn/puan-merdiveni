@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import type { GameState, Team } from "@/types/game"
+import type { GameState } from "@/types/game"
 import { determineWinner, determineFinalWinner } from "@/lib/game-utils"
+import { useAudio } from "@/components/AudioProvider"
+import AudioControls from "@/components/AudioControls"
 
 interface GameResultsProps {
   gameState: GameState
@@ -11,10 +13,12 @@ interface GameResultsProps {
 
 export default function GameResults({ gameState, onPlayAgain }: GameResultsProps) {
   const [showCelebration, setShowCelebration] = useState(false)
+  const { playSfx } = useAudio()
 
   useEffect(() => {
     setShowCelebration(true)
-  }, [])
+    playSfx("end-game")
+  }, [playSfx])
 
   // Determine winner - first check if anyone reached target, then check final positions
   const getWinnerResult = () => {
@@ -49,6 +53,10 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
           backgroundPosition: "center",
         }}
       ></div>
+
+      <div className="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
+        <AudioControls />
+      </div>
 
       {/* Confetti Effect - Full Screen */}
       {showCelebration && !isTie && (

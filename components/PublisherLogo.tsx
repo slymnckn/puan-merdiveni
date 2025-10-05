@@ -18,7 +18,6 @@ export default function PublisherLogo({
 }: PublisherLogoProps) {
   const [logoUrl, setLogoUrl] = useState<string>(fallbackLogo)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
 
   useEffect(() => {
     if (!publisherId || publisherId === 0) {
@@ -28,7 +27,6 @@ export default function PublisherLogo({
 
     const fetchLogo = async () => {
       setLoading(true)
-      setError(false)
       
       try {
         const logo = await apiService.fetchPublisherLogo(publisherId)
@@ -39,7 +37,6 @@ export default function PublisherLogo({
         }
       } catch (err) {
         console.error('Failed to fetch publisher logo:', err)
-        setError(true)
         setLogoUrl(fallbackLogo)
       } finally {
         setLoading(false)
@@ -52,7 +49,6 @@ export default function PublisherLogo({
   const handleImageError = () => {
     if (logoUrl !== fallbackLogo) {
       setLogoUrl(fallbackLogo)
-      setError(true)
     }
   }
 

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { characters } from "@/data/characters"
 import type { Team, Character } from "@/types/game"
+import AudioControls from "@/components/AudioControls"
 
 interface TeamSelectionProps {
   teams: Team[]
@@ -40,6 +41,9 @@ export default function TeamSelection({ teams, onTeamsUpdate, onContinue }: Team
       ></div>
 
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 py-8">
+        <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+          <AudioControls />
+        </div>
         {/* Title */}
         <div className="relative mb-6">
           <img src="/assets/soru-sayac-banneri.png" alt="Team Selection Title" className="h-20 w-auto" />

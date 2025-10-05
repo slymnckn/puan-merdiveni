@@ -1,5 +1,7 @@
 "use client"
 
+import AudioControls from "@/components/AudioControls"
+
 interface MainMenuProps {
   onStartGame: () => void
 }
@@ -18,6 +20,10 @@ export default function MainMenu({ onStartGame }: MainMenuProps) {
       ></div>
 
       <div className="relative z-10 h-full flex flex-col items-center justify-between px-8 pt-4 pb-12">
+        <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+          <AudioControls />
+        </div>
+
         {/* Game Title - Yukarıda */}
         <div className="relative mt-0">
           <img src="/assets/soru-sayac-banneri.png" alt="Game Title" className="h-20 w-auto" />

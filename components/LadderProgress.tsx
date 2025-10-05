@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from "react"
 import type { GameState } from "@/types/game"
+import { useAudio } from "@/components/AudioProvider"
+import AudioControls from "@/components/AudioControls"
 
 interface LadderProgressProps {
   gameState: GameState
@@ -13,6 +15,8 @@ interface LadderProgressProps {
 export default function LadderProgress({ gameState, onContinue, stepsGained, correctTeam }: LadderProgressProps) {
   const [showAnimation, setShowAnimation] = useState(false)
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]) // Timeout'ları takip et
+  const { playSfx } = useAudio()
+  const playSfxRef = useRef(playSfx)
   
   // Yanlış cevap ise animatedSteps = stepsGained (tamamlanmış), doğru cevap ise 0 (animasyon başlayacak)
   const [animatedSteps, setAnimatedSteps] = useState(
@@ -22,92 +26,69 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
   const [jumpFrame, setJumpFrame] = useState(1)
 
   useEffect(() => {
-    console.log('🎬 LadderProgress mounted:', { stepsGained, correctTeam, animatedSteps })
+    playSfxRef.current = playSfx
+  }, [playSfx])
+
+  useEffect(() => {
+    console.log('🎬 LadderProgress animasyonu hazırlanıyor:', { stepsGained, correctTeam })
     setShowAnimation(true)
-    
+    setAnimatedSteps(stepsGained === 0 || !correctTeam ? stepsGained : 0)
+
     // Yanlış cevap durumu: Animasyon yok
     if (stepsGained === 0 || !correctTeam) {
       console.log('❌ Yanlış cevap - animasyon yok')
-      return // Hiçbir şey yapma, animatedSteps zaten stepsGained
+      return () => undefined
     }
-    
+
     // Doğru cevap durumu: Önce karakter görünsün, sonra animasyon başlasın
-    if (stepsGained > 0 && correctTeam) {
-      console.log('✅ Doğru cevap - karakter görünüyor...')
-      
-      // 500ms bekle: Karakter tam görünsün
-      const initialDelay = setTimeout(() => {
-        console.log('🎬 Animasyon başlıyor!')
-        
-        // İlk adımı başlat
-        const performJump = (currentStep: number) => {
-          if (currentStep > stepsGained) {
-            console.log(`⚠️ currentStep (${currentStep}) > stepsGained (${stepsGained}), durduruluyor`)
-            return
-          }
-          
-          console.log(`🐾 Adım ${currentStep}/${stepsGained} başlıyor`)
-          
-          // ÖNEMLİ: Pozisyonu FRAME BAŞLAMADAN güncelle (böylece animasyon doğru pozisyonda oynar)
-          setAnimatedSteps(currentStep)
-          
-          // TÜM BASAMAKLAR: Frame animasyonu göster (500ms bekledikten sonra)
-          setIsJumping(true)
-        
-        // Frame animasyonu (3 frame)
+    const initialDelay = setTimeout(() => {
+      console.log('✅ Doğru cevap - animasyon başlıyor')
+
+      const performJump = (currentStep: number) => {
+        if (currentStep > stepsGained) {
+          return
+        }
+
+        setAnimatedSteps(currentStep)
         setIsJumping(true)
-        
-        // Frame animasyonu (3 frame)
-        // Her frame'in görüntülenme süresi: Frame 1: 100ms, Frame 2: 150ms, Frame 3: 100ms
+
+        const stepSoundKey = currentStep === 1 ? "step-1" : currentStep === 2 ? "step-2" : "step-3"
+  playSfxRef.current?.(stepSoundKey)
+
         const playFrame = (frameNum: number) => {
-          console.log(`  📸 Frame ${frameNum} (Adım ${currentStep}/${stepsGained})`)
           setJumpFrame(frameNum)
-          
-          // Her frame'in görüntülenme süresi
           const frameDuration = frameNum === 2 ? 150 : 100
-          
+
           if (frameNum < 3) {
-            // Bir sonraki frame'e geç
-            console.log(`    ⏱️ ${frameDuration}ms sonra Frame ${frameNum + 1}'e geçiliyor`)
             const timeout = setTimeout(() => playFrame(frameNum + 1), frameDuration)
             timeoutsRef.current.push(timeout)
           } else {
-            // Frame 3 tamamlandı - frame'i göster ve bitir
-            console.log(`    ⏱️ Frame 3, ${frameDuration}ms gösterilecek`)
             const timeout = setTimeout(() => {
-              console.log(`  ✓ Adım ${currentStep} frame animasyonu tamamlandı`)
-              setJumpFrame(1) // Reset to default
+              setJumpFrame(1)
               setIsJumping(false)
-              
-              // Bir sonraki adıma geç
+
               if (currentStep < stepsGained) {
-                console.log(`    ⏱️ 150ms sonra Adım ${currentStep + 1}'e geçiliyor`)
                 const nextTimeout = setTimeout(() => performJump(currentStep + 1), 150)
                 timeoutsRef.current.push(nextTimeout)
-              } else {
-                console.log('🎉 Tüm animasyon tamamlandı!')
               }
-            }, frameDuration) // Frame 3'ü 100ms göster
+            }, frameDuration)
             timeoutsRef.current.push(timeout)
           }
         }
-        
+
         playFrame(1)
       }
-      
-        performJump(1) // İlk adımı başlat
-      }, 500) // 500ms bekle: Karakter önce görünsün
-      
-      timeoutsRef.current.push(initialDelay)
-    }
-    
-    // Cleanup: Component unmount olduğunda tüm timeout'ları temizle
+
+      performJump(1)
+    }, 500)
+
+    timeoutsRef.current.push(initialDelay)
+
     return () => {
-      console.log('🧹 Cleanup: Tüm timeout\'lar temizleniyor')
       timeoutsRef.current.forEach(timeout => clearTimeout(timeout))
       timeoutsRef.current = []
     }
-  }, []) // Sadece ilk mount'ta çalış (component key zaten her soru için yeni instance)
+  }, [correctTeam, stepsGained])
 
   // Dinamik merdiven sistemi - Her takım için ayrı Sliding Window
   const VISIBLE_STEPS = 10 // Ekranda görünecek basamak sayısı (sabit)
@@ -410,6 +391,11 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: 'url(/assets/background.png)' }}
       />
+
+      {/* Audio Controls */}
+      <div className="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
+        <AudioControls />
+      </div>
 
       {/* Ladder Steps - Team A (Left side) - Her takımın kendi basamakları */}
       <div className="absolute inset-0">

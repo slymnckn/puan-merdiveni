@@ -1,4 +1,5 @@
-import type { LadderTargets, SurpriseChoice } from "@/types/game"
+import type { LadderTargets, SurpriseChoice, Question } from "@/types/game"
+import type { GameQuestion } from "@/types/api"
 
 // Ladder target calculations based on question count
 export const LADDER_TARGETS: LadderTargets = {
@@ -112,13 +113,10 @@ export const applySurpriseEffect = <T extends { id: 'A' | 'B'; ladderPosition: n
 }
 
 // Convert API GameQuestion to internal Question format
-export const convertGameQuestionToQuestion = (gameQuestion: any): any => {
-  // GameQuestion and Question types are now aligned, just ensure image_url is included
-  return {
-    ...gameQuestion,
-    image_url: gameQuestion.image_url || undefined
-  }
-}
+export const convertGameQuestionToQuestion = (gameQuestion: GameQuestion): Question => ({
+  ...gameQuestion,
+  image_url: gameQuestion.image_url || undefined
+})
 
 // Determine game winner - only based on reaching target during game
 export const determineWinner = <T extends { id: 'A' | 'B'; ladderPosition: number }>(

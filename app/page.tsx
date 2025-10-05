@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import type { GameState, GameScreen, Team, GameSettingsType, SurpriseChoice } from "@/types/game"
 import type { Advertisement, GameQuestion } from "@/types/api"
 import MainMenu from "@/components/MainMenu"
@@ -10,25 +10,23 @@ import QuestionReady from "@/components/QuestionReady"
 import LadderProgress from "@/components/LadderProgress"
 import SurpriseEvent from "@/components/SurpriseEvent"
 import GameResults from "@/components/GameResults"
-import QuestionDisplay from "@/components/QuestionDisplay"
 import AdvertisementScreen from "@/components/AdvertisementScreen"
-import PublisherLogo from "@/components/PublisherLogo"
+import AudioControls from "@/components/AudioControls"
 import { apiService } from "@/lib/api-service"
 import { 
   getLadderTarget, 
-  calculateStepsForTimedMode, 
-  calculateStepsForUntimedMode,
   applySurpriseEffect,
   determineWinner,
-  selectSurpriseChoice,
   convertGameQuestionToQuestion
 } from "@/lib/game-utils"
 import { questions } from "@/data/questions"
 import { placeholderQuestions } from "@/data/placeholder-questions"
+import { useAudio } from "@/components/AudioProvider"
 
 export default function GameApp() {
+  const { playMusic, stopMusic, playSfx } = useAudio()
   const [advertisements, setAdvertisements] = useState<Advertisement[]>([])
-  const [currentAdIndex, setCurrentAdIndex] = useState(0)
+  const [currentAdIndex] = useState(0)
   const [gameQuestions, setGameQuestions] = useState<GameQuestion[]>([])
   const [gameState, setGameState] = useState<GameState>({
     currentScreen: "main-menu",
@@ -61,6 +59,35 @@ export default function GameApp() {
 
   const [lastCorrectTeam, setLastCorrectTeam] = useState<"A" | "B">("A")
   const [stepsGained, setStepsGained] = useState(3)
+
+  const initialGameCodeRef = useRef(gameState.settings.gameCode || "default")
+
+  const lobbyScreens = useMemo(() => new Set<GameScreen>(["main-menu", "team-selection", "game-settings"]), [])
+  const inGameScreens = useMemo(
+    () => new Set<GameScreen>(["question-ready", "question-active", "ladder-progress", "surprise-event"]),
+    []
+  )
+
+  useEffect(() => {
+    const currentScreen = gameState.currentScreen
+    if (lobbyScreens.has(currentScreen)) {
+      playMusic("lobby")
+      return
+    }
+
+    if (inGameScreens.has(currentScreen)) {
+      playMusic("game")
+      return
+    }
+
+    if (currentScreen === "game-results") {
+      stopMusic()
+      return
+    }
+
+    // Default fallback: stop any ongoing music
+    stopMusic()
+  }, [gameState.currentScreen, inGameScreens, lobbyScreens, playMusic, stopMusic])
 
   // Soru havuzunu genişlet - yeterli soru yoksa placeholder'lardan ekle
   const ensureSufficientQuestions = (requiredCount: number): GameQuestion[] => {
@@ -108,7 +135,7 @@ export default function GameApp() {
       }
       
       // Fetch questions (can be done in parallel)
-      const questions = await apiService.fetchQuestions(gameState.settings.gameCode || 'default')
+  const questions = await apiService.fetchQuestions(initialGameCodeRef.current || 'default')
       console.log('Loaded questions:', questions.length)
       setGameQuestions(questions)
     }
@@ -200,29 +227,6 @@ export default function GameApp() {
     setGameState(prev => ({ ...prev, currentScreen: "main-menu" }))
   }
 
-  const loadNextQuestion = () => {
-    const questionsToUse = gameQuestions.length > 0 ? gameQuestions : questions
-    const questionIndex = gameState.currentQuestion - 1
-    const nextQuestion = questionsToUse[questionIndex] || questionsToUse[0] // Fallback
-    
-    console.log('Loading question:', {
-      questionIndex,
-      currentQuestion: gameState.currentQuestion,
-      availableQuestions: questionsToUse.length,
-      nextQuestion
-    })
-    
-    if (nextQuestion) {
-      setGameState((prev) => ({
-        ...prev,
-        currentQuestionData: nextQuestion,
-        correctAnswer: nextQuestion.correct_answer,
-      }))
-    } else {
-      console.error('No question found at index:', questionIndex)
-    }
-  }
-
   const handleShowQuestion = () => {
     setGameState((prev) => ({
       ...prev,
@@ -271,6 +275,7 @@ export default function GameApp() {
     }))
 
     if (isCorrect) {
+      playSfx("correct")
       const steps = calculateStepsGained(gameState.timeLeft, gameState.settings.gameMode)
       setStepsGained(steps)
       setLastCorrectTeam(currentTeam)
@@ -285,6 +290,7 @@ export default function GameApp() {
       }))
     } else {
       // Yanlış cevap durumunda stepsGained'i 0'a set et
+      playSfx("wrong")
       setStepsGained(0)
     }
 
@@ -538,13 +544,16 @@ export default function GameApp() {
               </div>
 
               {/* Timer */}
-              <div className="relative">
-                <img src="/assets/sure.png" alt="Timer" className="h-14 w-auto" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-amber-900 font-bold text-xl drop-shadow-sm">
-                    Süre: {gameState.settings.gameMode === "timed" ? gameState.timeLeft : "---"}
-                  </span>
+              <div className="flex flex-col items-center gap-2">
+                <div className="relative">
+                  <img src="/assets/sure.png" alt="Timer" className="h-14 w-auto" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-amber-900 font-bold text-xl drop-shadow-sm">
+                      Süre: {gameState.settings.gameMode === "timed" ? gameState.timeLeft : "---"}
+                    </span>
+                  </div>
                 </div>
+                <AudioControls orientation="vertical" className="mt-1" />
               </div>
             </div>
 

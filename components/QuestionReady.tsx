@@ -1,6 +1,7 @@
 "use client"
 
 import type { GameState } from "@/types/game"
+import AudioControls from "@/components/AudioControls"
 
 interface QuestionReadyProps {
   gameState: GameState
@@ -35,11 +36,14 @@ export default function QuestionReady({ gameState, onShowQuestion, currentTurn }
           </div>
 
           {/* Timer */}
-          <div className="relative">
-            <img src="/assets/sure.png" alt="Timer" className="h-14 w-auto" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-amber-900 font-bold text-xl drop-shadow-sm">---</span>
+          <div className="flex flex-col items-center gap-2">
+            <div className="relative">
+              <img src="/assets/sure.png" alt="Timer" className="h-14 w-auto" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-amber-900 font-bold text-xl drop-shadow-sm">---</span>
+              </div>
             </div>
+            <AudioControls orientation="vertical" className="mt-1" />
           </div>
         </div>
 

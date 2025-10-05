@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import type { GameSettingsType } from "@/types/game"
+import AudioControls from "@/components/AudioControls"
 
 interface GameSettingsProps {
   settings: GameSettingsType
@@ -33,6 +34,9 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
       ></div>
 
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 py-6">
+        <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+          <AudioControls />
+        </div>
         {/* Title */}
         <div className="relative mb-6">
           <img src="/assets/soru-sayac-banneri.png" alt="Game Settings Title" className="h-18 w-auto" />

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Baloo_2 } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import { AudioProvider } from '@/components/AudioProvider'
 
 const baloo2 = Baloo_2({
   variable: '--font-sans',
@@ -23,7 +24,9 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <body className={`font-sans ${baloo2.variable}`}>
-        {children}
+        <AudioProvider>
+          {children}
+        </AudioProvider>
         <Analytics />
       </body>
     </html>
