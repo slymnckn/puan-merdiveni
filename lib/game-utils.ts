@@ -1,4 +1,4 @@
-import type { LadderTargets, SurpriseChoice, Question } from "@/types/game"
+import type { LadderTargets, SurpriseChoice, SurpriseTracker, Question } from "@/types/game"
 import type { GameQuestion } from "@/types/api"
 
 // Ladder target calculations based on question count
@@ -110,6 +110,100 @@ export const applySurpriseEffect = <T extends { id: 'A' | 'B'; ladderPosition: n
   }
   
   return updatedTeams
+}
+
+const SURPRISE_TRIGGER_CONFIG = {
+  baseProbability: 0.3,
+  pityIncrement: 0.12,
+  minProbability: 0.1,
+  maxProbability: 0.85,
+  cooldownQuestions: 1,
+  fairnessGapThreshold: 2
+} as const
+
+type SurpriseTriggerParams = {
+  tracker: SurpriseTracker
+  currentQuestion: number
+  currentTurn: 'A' | 'B'
+  randomValue?: number
+}
+
+type SurpriseTriggerDecision = {
+  triggered: boolean
+  probability: number
+  randomValue: number
+  tracker: SurpriseTracker
+}
+
+export const evaluateSurpriseTrigger = ({
+  tracker,
+  currentQuestion,
+  currentTurn,
+  randomValue
+}: SurpriseTriggerParams): SurpriseTriggerDecision => {
+  const roll = randomValue ?? Math.random()
+  const otherTeam = currentTurn === 'A' ? 'B' : 'A'
+
+  if (
+    tracker.lastTriggeredQuestion !== null &&
+    currentQuestion - tracker.lastTriggeredQuestion <= SURPRISE_TRIGGER_CONFIG.cooldownQuestions
+  ) {
+    return {
+      triggered: false,
+      probability: 0,
+      randomValue: roll,
+      tracker: { ...tracker }
+    }
+  }
+
+  const distanceSinceLast = tracker.lastTriggeredQuestion === null
+    ? currentQuestion - 1
+    : Math.max(0, currentQuestion - tracker.lastTriggeredQuestion - 1)
+
+  let probability = SURPRISE_TRIGGER_CONFIG.baseProbability +
+    distanceSinceLast * SURPRISE_TRIGGER_CONFIG.pityIncrement
+
+  const currentTeamCount = tracker.teamCounts[currentTurn] ?? 0
+  const otherTeamCount = tracker.teamCounts[otherTeam] ?? 0
+  const difference = currentTeamCount - otherTeamCount
+
+  if (difference < 0) {
+    probability += Math.min(0.25, Math.abs(difference) * 0.15)
+  } else if (difference > 0) {
+    probability -= Math.min(0.2, difference * 0.1)
+  }
+
+  probability = Math.min(
+    SURPRISE_TRIGGER_CONFIG.maxProbability,
+    Math.max(SURPRISE_TRIGGER_CONFIG.minProbability, probability)
+  )
+
+  let triggered: boolean
+
+  if (difference <= -SURPRISE_TRIGGER_CONFIG.fairnessGapThreshold) {
+    triggered = true
+  } else if (difference >= SURPRISE_TRIGGER_CONFIG.fairnessGapThreshold) {
+    triggered = false
+  } else {
+    triggered = roll < probability
+  }
+
+  const nextTracker: SurpriseTracker = triggered
+    ? {
+        lastTriggeredQuestion: currentQuestion,
+        teamCounts: {
+          ...tracker.teamCounts,
+          [currentTurn]: currentTeamCount + 1
+        }
+      }
+    : { ...tracker }
+
+  return {
+    triggered,
+    probability,
+    randomValue: roll,
+    tracker: nextTracker
+  }
 }
 
 // Convert API GameQuestion to internal Question format

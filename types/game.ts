@@ -64,6 +64,14 @@ export type SurpriseChoice = {
   }
 }
 
+export type SurpriseTracker = {
+  lastTriggeredQuestion: number | null
+  teamCounts: {
+    A: number
+    B: number
+  }
+}
+
 export type Advertisement = {
   id: number
   name: string
@@ -92,6 +100,7 @@ export type GameState = {
     availableChoices: SurpriseChoice[]
     selectedChoice?: SurpriseChoice
   } | null
+  surpriseTracker: SurpriseTracker
   questions: Question[]
   advertisements: Advertisement[]
   currentAdvertisement: Advertisement | null

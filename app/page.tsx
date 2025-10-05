@@ -17,7 +17,8 @@ import {
   getLadderTarget, 
   applySurpriseEffect,
   determineWinner,
-  convertGameQuestionToQuestion
+  convertGameQuestionToQuestion,
+  evaluateSurpriseTrigger
 } from "@/lib/game-utils"
 import { questions } from "@/data/questions"
 import { placeholderQuestions } from "@/data/placeholder-questions"
@@ -51,6 +52,10 @@ export default function GameApp() {
     gameStartTime: Date.now(),
     publisherLogo: null,
     surpriseData: null,
+    surpriseTracker: {
+      lastTriggeredQuestion: null,
+      teamCounts: { A: 0, B: 0 }
+    },
     questions: [],
     advertisements: [],
     currentAdvertisement: null,
@@ -216,6 +221,10 @@ export default function GameApp() {
       totalQuestions: prev.settings.questionCount,
       ladderTarget: getLadderTarget(prev.settings.questionCount),
       gameStartTime: Date.now(),
+      surpriseTracker: {
+        lastTriggeredQuestion: null,
+        teamCounts: { A: 0, B: 0 }
+      }
     }))
   }
 
@@ -312,16 +321,24 @@ export default function GameApp() {
     if (shouldEndGame) {
       navigateToScreen("game-results")
     } else {
-      // Check for surprise event (every 3 questions)
-      if (gameState.settings.surpriseSystem && gameState.currentQuestion % 3 === 0) {
+      const surpriseDecision = gameState.settings.surpriseSystem
+        ? evaluateSurpriseTrigger({
+            tracker: gameState.surpriseTracker,
+            currentQuestion: gameState.currentQuestion,
+            currentTurn: gameState.currentTurn
+          })
+        : null
+
+      if (surpriseDecision?.triggered) {
         setGameState((prev) => ({
           ...prev,
           currentScreen: "surprise-event",
           surpriseData: {
-            luckyNumber: Math.floor(Math.random() * 6) + 1, // 1-6 dice roll
+            luckyNumber: Math.floor(Math.random() * 6) + 1,
             availableChoices: [],
             selectedChoice: undefined
-          }
+          },
+          surpriseTracker: surpriseDecision.tracker
         }))
       } else {
         const questionsToUse = gameQuestions.length > 0 ? gameQuestions : questions
@@ -345,6 +362,7 @@ export default function GameApp() {
           currentQuestionData: nextQuestion,
           correctAnswer: nextQuestion.correct_answer,
           currentTurn: prev.currentTurn === "A" ? "B" : "A", // Switch turns
+          surpriseTracker: surpriseDecision ? surpriseDecision.tracker : prev.surpriseTracker,
         }))
       }
     }
@@ -436,6 +454,10 @@ export default function GameApp() {
       gameStartTime: Date.now(),
       publisherLogo: null,
       surpriseData: null,
+      surpriseTracker: {
+        lastTriggeredQuestion: null,
+        teamCounts: { A: 0, B: 0 }
+      },
       questions: [],
       advertisements: [],
       currentAdvertisement: null,
@@ -532,7 +554,7 @@ export default function GameApp() {
 
           <div className="relative z-10 h-full">
             {/* Top Section - Question Counter and Timer */}
-            <div className="absolute top-0 left-0 right-0 flex items-start justify-between w-full px-8 pt-6 z-20">
+            <div className="absolute top-0 left-0 right-0 flex items-start justify-between w-full pl-8 pr-16 md:pr-20 pt-6 z-20">
               {/* Question Counter Banner */}
               <div className="relative">
                 <img src="/assets/soru-sayac-banneri.png" alt="Question Banner" className="h-16 w-auto" />
@@ -544,7 +566,7 @@ export default function GameApp() {
               </div>
 
               {/* Timer */}
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-col items-end gap-2">
                 <div className="relative">
                   <img src="/assets/sure.png" alt="Timer" className="h-14 w-auto" />
                   <div className="absolute inset-0 flex items-center justify-center">
