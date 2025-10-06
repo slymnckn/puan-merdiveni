@@ -38,6 +38,7 @@ export type Question = {
   correct_answer: "A" | "B" | "C" | "D" | "true" | "false"
   publisher_id: number
   image_url?: string
+  publisher_logo_url?: string
 }
 
 export type GameSettingsType = {
@@ -95,6 +96,7 @@ export type GameState = {
   currentTurn: "A" | "B"
   gameStartTime: number
   publisherLogo: string | null
+  publisherId: number | null
   surpriseData: {
     luckyNumber: number
     availableChoices: SurpriseChoice[]

@@ -5,14 +5,16 @@ import type { GameState } from "@/types/game"
 import { determineWinner, determineFinalWinner } from "@/lib/game-utils"
 import { useAudio } from "@/components/AudioProvider"
 import AudioControls from "@/components/AudioControls"
+import PublisherLogoBadge from "@/components/PublisherLogoBadge"
 import { getAssetPath } from "@/lib/asset-path"
 
 interface GameResultsProps {
   gameState: GameState
   onPlayAgain: () => void
+  publisherLogo?: string | null
 }
 
-export default function GameResults({ gameState, onPlayAgain }: GameResultsProps) {
+export default function GameResults({ gameState, onPlayAgain, publisherLogo }: GameResultsProps) {
   const [showCelebration, setShowCelebration] = useState(false)
   const { playSfx } = useAudio()
 
@@ -55,6 +57,11 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
         }}
       ></div>
 
+      {publisherLogo && (
+        <div className="absolute top-4 left-4 z-30">
+          <PublisherLogoBadge logoUrl={publisherLogo} size="sm" />
+        </div>
+      )}
       <div className="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
         <AudioControls />
       </div>

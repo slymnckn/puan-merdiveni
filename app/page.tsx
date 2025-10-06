@@ -12,6 +12,7 @@ import SurpriseEvent from "@/components/SurpriseEvent"
 import GameResults from "@/components/GameResults"
 import AdvertisementScreen from "@/components/AdvertisementScreen"
 import AudioControls from "@/components/AudioControls"
+import PublisherLogoBadge from "@/components/PublisherLogoBadge"
 import { getAssetPath } from "@/lib/asset-path"
 import { apiService } from "@/lib/api-service"
 import { 
@@ -92,6 +93,7 @@ export default function GameApp() {
     currentTurn: "A",
     gameStartTime: Date.now(),
     publisherLogo: null,
+    publisherId: null,
     surpriseData: null,
     surpriseTracker: {
       lastTriggeredQuestion: null,
@@ -194,6 +196,14 @@ export default function GameApp() {
       setAdvertisements(ads)
       setGameQuestions(fetchedQuestions)
 
+      const initialPublisherQuestion = fetchedQuestions.find((question) => {
+        const hasPublisher = typeof question.publisher_id === "number" && question.publisher_id > 0
+        const hasLogo = typeof question.publisher_logo_url === "string" && question.publisher_logo_url.trim().length > 0
+        return hasPublisher || hasLogo
+      })
+      const initialPublisherId = initialPublisherQuestion?.publisher_id ?? null
+      const initialPublisherLogo = initialPublisherQuestion?.publisher_logo_url?.trim() ?? null
+
       setGameState((prev) => ({
         ...prev,
         currentScreen: ads.length > 0 ? "advertisement" : "main-menu",
@@ -203,7 +213,9 @@ export default function GameApp() {
         settings: {
           ...prev.settings,
           gameCode: resolvedGameCode
-        }
+        },
+        publisherId: initialPublisherId ?? prev.publisherId ?? null,
+        publisherLogo: initialPublisherLogo ?? prev.publisherLogo ?? null
       }))
 
       console.log("Loaded questions:", fetchedQuestions.length, "source:", initialGameCodeRef.current)
@@ -218,7 +230,6 @@ export default function GameApp() {
   useEffect(() => {
     console.log('gameQuestions updated:', gameQuestions.length, 'questions available')
   }, [gameQuestions])
-
   const navigateToScreen = (screen: GameScreen) => {
     setGameState((prev) => ({ ...prev, currentScreen: screen }))
   }
@@ -284,6 +295,8 @@ export default function GameApp() {
       currentScreen: "question-ready",
       currentQuestionData: firstQuestion,
       correctAnswer: firstQuestion.correct_answer,
+  publisherId: firstQuestion.publisher_id ?? prev.publisherId,
+  publisherLogo: firstQuestion.publisher_logo_url?.trim() ? firstQuestion.publisher_logo_url.trim() : prev.publisherLogo,
       totalQuestions: prev.settings.questionCount,
       ladderTarget: getLadderTarget(prev.settings.questionCount),
       gameStartTime: Date.now(),
@@ -427,6 +440,8 @@ export default function GameApp() {
           currentScreen: "question-ready",
           currentQuestionData: nextQuestion,
           correctAnswer: nextQuestion.correct_answer,
+          publisherId: nextQuestion.publisher_id ?? prev.publisherId,
+          publisherLogo: nextQuestion.publisher_logo_url?.trim() ? nextQuestion.publisher_logo_url.trim() : prev.publisherLogo,
           currentTurn: prev.currentTurn === "A" ? "B" : "A", // Switch turns
           surpriseTracker: surpriseDecision ? surpriseDecision.tracker : prev.surpriseTracker,
         }))
@@ -463,12 +478,14 @@ export default function GameApp() {
         return {
           ...prev,
           teams: updatedTeams,
-          currentScreen: "game-results"
+          currentScreen: "game-results",
+          publisherId: prev.publisherId,
+          publisherLogo: prev.publisherLogo
         }
       }
       
-      // Continue game - load next question
-  const questionsToUse = gameQuestions.length > 0 ? gameQuestions : placeholderQuestions
+    // Continue game - load next question
+    const questionsToUse = gameQuestions.length > 0 ? gameQuestions : placeholderQuestions
       const nextQuestionIndex = prev.currentQuestion
       const rawQuestion = questionsToUse[nextQuestionIndex]
       
@@ -490,6 +507,8 @@ export default function GameApp() {
         currentScreen: "question-ready",
         currentQuestionData: nextQuestion,
         correctAnswer: nextQuestion.correct_answer,
+  publisherId: nextQuestion.publisher_id ?? prev.publisherId,
+  publisherLogo: nextQuestion.publisher_logo_url?.trim() ? nextQuestion.publisher_logo_url.trim() : prev.publisherLogo,
         currentTurn: prev.currentTurn === "A" ? "B" : "A", // Switch turns
         surpriseData: null
       }
@@ -498,16 +517,17 @@ export default function GameApp() {
 
   const handlePlayAgain = () => {
     setGameState((prev) => ({
+      ...prev,
       currentScreen: "main-menu",
       teams: [
         { id: "A", name: "TAKIM A", character: null, score: 0, ladderPosition: 0 },
         { id: "B", name: "TAKIM B", character: null, score: 0, ladderPosition: 0 },
       ],
       settings: {
+        ...prev.settings,
         questionCount: 20,
         gameMode: "timed",
         surpriseSystem: true,
-        gameCode: prev.settings.gameCode,
       },
       currentQuestion: 1,
       totalQuestions: 20,
@@ -519,17 +539,20 @@ export default function GameApp() {
       ladderTarget: getLadderTarget(20),
       currentTurn: "A",
       gameStartTime: Date.now(),
-      publisherLogo: null,
+      publisherLogo: prev.publisherLogo,
+      publisherId: prev.publisherId,
       surpriseData: null,
       surpriseTracker: {
         lastTriggeredQuestion: null,
         teamCounts: { A: 0, B: 0 }
       },
       questions: [],
-      advertisements: [],
-      currentAdvertisement: null,
-      advertisementTimeLeft: 0,
+      advertisements: prev.advertisements,
+      currentAdvertisement: prev.currentAdvertisement,
+      advertisementTimeLeft: prev.advertisementTimeLeft,
     }))
+    setLastCorrectTeam("A")
+    setStepsGained(3)
   }
 
   // Timer countdown for question screen
@@ -557,10 +580,10 @@ export default function GameApp() {
           />
         )
       }
-      return <MainMenu onStartGame={handleStartGame} />
+      return <MainMenu onStartGame={handleStartGame} publisherLogo={gameState.publisherLogo} />
       
     case "main-menu":
-      return <MainMenu onStartGame={handleStartGame} />
+      return <MainMenu onStartGame={handleStartGame} publisherLogo={gameState.publisherLogo} />
 
     case "team-selection":
       return (
@@ -568,6 +591,7 @@ export default function GameApp() {
           teams={gameState.teams}
           onTeamsUpdate={handleTeamsUpdate}
           onContinue={handleContinueFromTeamSelection}
+          publisherLogo={gameState.publisherLogo}
         />
       )
 
@@ -577,11 +601,19 @@ export default function GameApp() {
           settings={gameState.settings}
           onSettingsUpdate={handleSettingsUpdate}
           onStartGame={handleStartFromSettings}
+          publisherLogo={gameState.publisherLogo}
         />
       )
 
     case "question-ready":
-      return <QuestionReady gameState={gameState} onShowQuestion={handleShowQuestion} currentTurn={gameState.currentTurn} />
+      return (
+        <QuestionReady
+          gameState={gameState}
+          onShowQuestion={handleShowQuestion}
+          currentTurn={gameState.currentTurn}
+          publisherLogo={gameState.publisherLogo}
+        />
+      )
 
     case "ladder-progress":
       console.log('📊 Rendering LadderProgress:', { 
@@ -597,6 +629,7 @@ export default function GameApp() {
           onContinue={handleContinueFromLadder}
           stepsGained={stepsGained}
           correctTeam={stepsGained > 0 ? lastCorrectTeam : null}
+          publisherLogo={gameState.publisherLogo}
         />
       )
 
@@ -604,7 +637,7 @@ export default function GameApp() {
       return <SurpriseEvent gameState={gameState} onSurpriseComplete={handleSurpriseComplete} />
 
     case "game-results":
-      return <GameResults gameState={gameState} onPlayAgain={handlePlayAgain} />
+      return <GameResults gameState={gameState} onPlayAgain={handlePlayAgain} publisherLogo={gameState.publisherLogo} />
 
     case "question-active": {
       const backgroundImage = getAssetPath("/assets/background.png")
@@ -637,19 +670,24 @@ export default function GameApp() {
 
           <div className="relative z-10 h-full">
             {/* Top Section - Question Counter and Timer */}
-            <div className="absolute top-0 left-0 right-0 flex items-start justify-between w-full pl-8 pr-16 md:pr-20 pt-6 z-20">
+            <div className="absolute top-0 left-0 right-0 flex items-start justify-between w-full pl-8 pr-16 md:pr-20 pt-6 z-20 pointer-events-none">
               {/* Question Counter Banner */}
-              <div className="relative">
-                <img src={questionCounterBanner} alt="Question Banner" className="h-16 w-auto" />
-                <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '-15px' }}>
-                  <span className="text-amber-900 font-bold text-lg drop-shadow-sm">
-                    Soru {gameState.currentQuestion}/{gameState.settings.questionCount}
-                  </span>
+              <div className="relative flex flex-col items-start gap-3">
+                <div className="relative">
+                  <img src={questionCounterBanner} alt="Question Banner" className="h-16 w-auto" />
+                  <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '-15px' }}>
+                    <span className="text-amber-900 font-bold text-lg drop-shadow-sm">
+                      Soru {gameState.currentQuestion}/{gameState.settings.questionCount}
+                    </span>
+                  </div>
                 </div>
+                {gameState.publisherLogo && (
+                  <PublisherLogoBadge logoUrl={gameState.publisherLogo} size="sm" />
+                )}
               </div>
 
               {/* Timer */}
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-col items-end gap-2 pointer-events-auto">
                 <div className="relative">
                   <img src={timerAsset} alt="Timer" className="h-14 w-auto" />
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -706,7 +744,7 @@ export default function GameApp() {
             </div>
 
             {/* Soru Banner - Büyütülmüş ve merkezde */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-[52%] -translate-y-1/2 w-full max-w-7xl px-4" style={{ paddingLeft: '260px', paddingRight: '160px' }}>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-[52%] -translate-y-1/2 w-full max-w-7xl px-4 z-10 pointer-events-auto" style={{ paddingLeft: '260px', paddingRight: '160px' }}>
               <div className="relative w-full">
                 <img src={questionCardAsset} alt="Question Background" className="w-full h-auto" style={{ transform: 'scale(1.15)' }} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-10" style={{ paddingTop: '75px' }}>
@@ -728,14 +766,14 @@ export default function GameApp() {
                           </div>
                           
                           {/* Sağ taraf - Soru ve Şıklar */}
-                          <div className="flex-1" style={{ paddingRight: '0px', marginTop: '5px' }}>
-                            <h2 className="text-white text-2xl font-bold mb-6 drop-shadow-lg text-left">
+                          <div className="flex-1 flex flex-col" style={{ paddingRight: '0px', marginTop: '5px' }}>
+                            <h2 className="text-white text-2xl font-bold mb-3 drop-shadow-lg text-left pointer-events-none flex-shrink-0">
                               Soru: {gameState.currentQuestionData.question_text}
                             </h2>
                             
                             {/* Şıklar için render */}
                             {gameState.currentQuestionData.type === "true_false" ? (
-                              <div className="grid grid-cols-2 gap-3 w-full" style={{ maxWidth: '650px' }}>
+                              <div className="grid grid-cols-2 gap-3 w-full relative z-30 flex-shrink-0" style={{ maxWidth: '650px' }}>
                           {["true", "false"].map((option) => {
                             const key = option === "true" ? "A" : "B"
                             const text = option === "true" ? "Doğru" : "Yanlış"
@@ -762,12 +800,13 @@ export default function GameApp() {
                                 key={key}
                                 onClick={() => !gameState.answerResult && handleAnswerClick(key)}
                                 disabled={!!gameState.answerResult}
-                                className={`relative group transition-transform hover:scale-105 ${
+                                className={`relative group transition-transform hover:scale-105 z-40 ${
                                   gameState.selectedAnswer === key ? "scale-105" : ""
                                 } ${gameState.answerResult ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                style={{ pointerEvents: 'auto' }}
                               >
-                                <img src={buttonImage} alt="Answer Button" className="w-full h-auto" />
-                                <div className="absolute inset-0 flex items-center justify-center px-4">
+                                <img src={buttonImage} alt="Answer Button" className="w-full h-auto pointer-events-none" />
+                                <div className="absolute inset-0 flex items-center justify-center px-4 pointer-events-none">
                                   <span className="text-white font-bold text-lg drop-shadow-lg text-center truncate max-w-full">
                                     {key}) {text}
                                   </span>
@@ -839,8 +878,10 @@ export default function GameApp() {
                           )}
                         </div>
                       ) : (
-                        <div className="grid grid-cols-2 gap-3 w-full" style={{ maxWidth: '650px' }}>
-                          {gameState.currentQuestionData.options && Object.entries(gameState.currentQuestionData.options).map(([key, text]) => {
+                        <div className="grid grid-cols-2 gap-3 w-full relative z-30 flex-shrink-0" style={{ maxWidth: '650px' }}>
+                          {gameState.currentQuestionData.options && Object.entries(gameState.currentQuestionData.options)
+                            .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+                            .map(([key, text]) => {
                             if (!text) return null
                             
                             let buttonImage = defaultButtonAsset
@@ -858,12 +899,13 @@ export default function GameApp() {
                                 key={key}
                                 onClick={() => !gameState.answerResult && handleAnswerClick(key)}
                                 disabled={!!gameState.answerResult}
-                                className={`relative group transition-transform hover:scale-105 ${
+                                className={`relative group transition-transform hover:scale-105 z-40 ${
                                   gameState.selectedAnswer === key ? "scale-105" : ""
                                 } ${gameState.answerResult ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                style={{ pointerEvents: 'auto' }}
                               >
-                                <img src={buttonImage} alt="Answer Button" className="w-full h-auto" />
-                                <div className="absolute inset-0 flex items-center justify-center px-4">
+                                <img src={buttonImage} alt="Answer Button" className="w-full h-auto pointer-events-none" />
+                                <div className="absolute inset-0 flex items-center justify-center px-4 pointer-events-none">
                                   <span className="text-white font-bold text-lg drop-shadow-lg text-center line-clamp-2 max-w-full overflow-hidden">
                                     {key}) {text}
                                   </span>
@@ -878,7 +920,7 @@ export default function GameApp() {
                       ) : (
                         // Görselsiz soru için normal merkezi layout
                         <div className="text-center">
-                          <h2 className="text-white text-3xl font-bold mb-8 drop-shadow-lg">
+                          <h2 className="text-white text-3xl font-bold mb-4 drop-shadow-lg pointer-events-none">
                             Soru: {gameState.currentQuestionData.question_text}
                           </h2>
                           
@@ -906,12 +948,13 @@ export default function GameApp() {
                                     key={key}
                                     onClick={() => !gameState.answerResult && handleAnswerClick(key)}
                                     disabled={!!gameState.answerResult}
-                                    className={`relative group transition-transform hover:scale-105 ${
+                                    className={`relative group transition-transform hover:scale-105 z-40 ${
                                       gameState.selectedAnswer === key ? "scale-105" : ""
                                     } ${gameState.answerResult ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                    style={{ pointerEvents: 'auto' }}
                                   >
-                                    <img src={buttonImage} alt="Answer Button" className="w-full h-auto" />
-                                    <div className="absolute inset-0 flex items-center justify-center px-4">
+                                    <img src={buttonImage} alt="Answer Button" className="w-full h-auto pointer-events-none" />
+                                    <div className="absolute inset-0 flex items-center justify-center px-4 pointer-events-none">
                                       <span className="text-white font-bold text-xl drop-shadow-lg text-center truncate max-w-full">
                                         {key}) {text}
                                       </span>
@@ -979,8 +1022,10 @@ export default function GameApp() {
                               )}
                             </div>
                           ) : (
-                            <div className="grid grid-cols-2 gap-4 w-full max-w-2xl mx-auto">
-                              {gameState.currentQuestionData.options && Object.entries(gameState.currentQuestionData.options).map(([key, text]) => {
+                            <div className="grid grid-cols-2 gap-4 w-full max-w-2xl mx-auto relative z-30 flex-shrink-0">
+                              {gameState.currentQuestionData.options && Object.entries(gameState.currentQuestionData.options)
+                                .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+                                .map(([key, text]) => {
                                 if (!text) return null
                                 
                                 let buttonImage = defaultButtonAsset
@@ -998,12 +1043,13 @@ export default function GameApp() {
                                     key={key}
                                     onClick={() => !gameState.answerResult && handleAnswerClick(key)}
                                     disabled={!!gameState.answerResult}
-                                    className={`relative group transition-transform hover:scale-105 ${
+                                    className={`relative group transition-transform hover:scale-105 z-40 ${
                                       gameState.selectedAnswer === key ? "scale-105" : ""
                                     } ${gameState.answerResult ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                    style={{ pointerEvents: 'auto' }}
                                   >
-                                    <img src={buttonImage} alt="Answer Button" className="w-full h-auto" />
-                                    <div className="absolute inset-0 flex items-center justify-center px-4">
+                                    <img src={buttonImage} alt="Answer Button" className="w-full h-auto pointer-events-none" />
+                                    <div className="absolute inset-0 flex items-center justify-center px-4 pointer-events-none">
                                       <span className="text-white font-bold text-xl drop-shadow-lg text-center line-clamp-2 max-w-full overflow-hidden">
                                         {key}) {text}
                                       </span>
@@ -1056,9 +1102,9 @@ export default function GameApp() {
           />
         )
       }
-      return <MainMenu onStartGame={handleStartGame} />
+      return <MainMenu onStartGame={handleStartGame} publisherLogo={gameState.publisherLogo} />
 
     default:
-      return <MainMenu onStartGame={handleStartGame} />
+      return <MainMenu onStartGame={handleStartGame} publisherLogo={gameState.publisherLogo} />
   }
 }

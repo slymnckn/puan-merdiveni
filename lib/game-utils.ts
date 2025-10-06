@@ -209,7 +209,8 @@ export const evaluateSurpriseTrigger = ({
 // Convert API GameQuestion to internal Question format
 export const convertGameQuestionToQuestion = (gameQuestion: GameQuestion): Question => ({
   ...gameQuestion,
-  image_url: gameQuestion.image_url || undefined
+  image_url: gameQuestion.image_url || undefined,
+  publisher_logo_url: gameQuestion.publisher_logo_url || undefined
 })
 
 // Determine game winner - only based on reaching target during game

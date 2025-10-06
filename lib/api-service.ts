@@ -94,6 +94,7 @@ class ApiService {
       const url = this.buildUrl(code, 'unity/question-groups/code/{code}')
       const response = await this.fetchWithRetry(url)
       const payload = await response.json()
+
       const apiQuestions = this.extractQuestionsFromPayload(payload)
 
       if (apiQuestions.length === 0) {
@@ -132,29 +133,54 @@ class ApiService {
   }
 
   private extractQuestionsFromPayload(payload: unknown): ApiQuestion[] {
-    const queue: unknown[] = [payload]
+    const queue: { data: unknown; groupLogo?: string; availableLogos?: string[] }[] = [{ data: payload }]
     const visited = new WeakSet<object>()
     const results: ApiQuestion[] = []
 
+    // İlk payload'dan group-level logo bilgisini çıkar
+    let groupLogoUrl: string | undefined
+    let groupAvailableLogos: string[] | undefined
+
+    if (payload && typeof payload === 'object') {
+      const rootObj = payload as Record<string, unknown>
+      groupLogoUrl = this.toString(rootObj.logo_url ?? rootObj.publisher_logo_url)
+      const rawLogos = rootObj.available_logos ?? rootObj.availableLogos
+      if (Array.isArray(rawLogos)) {
+        groupAvailableLogos = rawLogos.filter((l): l is string => typeof l === 'string' && l.trim().length > 0)
+      }
+    }
+
     while (queue.length > 0) {
-      const current = queue.shift()
+      const item = queue.shift()
+      if (!item) {
+        continue
+      }
+
+      const { data: current, groupLogo = groupLogoUrl, availableLogos = groupAvailableLogos } = item
+
       if (!current) {
         continue
       }
 
       if (Array.isArray(current)) {
-        for (const item of current) {
-          if (!item) {
+        for (const arrayItem of current) {
+          if (!arrayItem) {
             continue
           }
 
-          if (this.isApiQuestion(item)) {
-            results.push(item)
+          if (this.isApiQuestion(arrayItem)) {
+            // Soruya group logo bilgisini ekle
+            const questionWithLogo = {
+              ...arrayItem,
+              logo_url: arrayItem.logo_url ?? groupLogo,
+              available_logos: arrayItem.available_logos ?? availableLogos
+            }
+            results.push(questionWithLogo)
             continue
           }
 
-          if (typeof item === 'object') {
-            queue.push(item)
+          if (typeof arrayItem === 'object') {
+            queue.push({ data: arrayItem, groupLogo, availableLogos })
           }
         }
         continue
@@ -173,7 +199,13 @@ class ApiService {
       visited.add(obj)
 
       if (this.isApiQuestion(obj)) {
-        results.push(obj)
+        // Soruya group logo bilgisini ekle
+        const questionWithLogo = {
+          ...obj,
+          logo_url: obj.logo_url ?? groupLogo,
+          available_logos: obj.available_logos ?? availableLogos
+        }
+        results.push(questionWithLogo)
         continue
       }
 
@@ -199,12 +231,12 @@ class ApiService {
 
       for (const key of candidateKeys) {
         if (key in obj) {
-          queue.push(obj[key])
+          queue.push({ data: obj[key], groupLogo, availableLogos })
         }
       }
 
       if ('question' in obj) {
-        queue.push(obj['question'])
+        queue.push({ data: obj['question'], groupLogo, availableLogos })
       }
     }
 
@@ -394,6 +426,21 @@ class ApiService {
         ''
       ) || undefined
 
+      const rawAvailableLogos = questionRecord.available_logos ?? questionRecord.availableLogos
+      let publisherLogoUrl = this.toString(
+        questionRecord.logo_url ??
+        questionRecord.publisher_logo_url ??
+        this.ensureRecord(questionRecord.publisher).logo_url ??
+        ''
+      )
+
+      if (!publisherLogoUrl && Array.isArray(rawAvailableLogos)) {
+        const firstLogo = rawAvailableLogos.find((entry) => typeof entry === 'string' && entry.trim().length > 0)
+        if (typeof firstLogo === 'string') {
+          publisherLogoUrl = this.toString(firstLogo)
+        }
+      }
+
       const publisherId = this.toNumber(questionRecord.publisher_id) ?? 0
 
       const identifier = this.toNumber(questionRecord.id) ?? index + 1
@@ -410,7 +457,8 @@ class ApiService {
         options: baseOptions,
         correct_answer: correctAnswer,
         publisher_id: publisherId,
-        image_url: imageUrl
+        image_url: imageUrl,
+        publisher_logo_url: publisherLogoUrl || undefined
       }
     })
   }

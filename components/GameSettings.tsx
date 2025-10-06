@@ -3,15 +3,17 @@
 import { useState } from "react"
 import type { GameSettingsType } from "@/types/game"
 import AudioControls from "@/components/AudioControls"
+import PublisherLogoBadge from "@/components/PublisherLogoBadge"
 import { getAssetPath } from "@/lib/asset-path"
 
 interface GameSettingsProps {
   settings: GameSettingsType
   onSettingsUpdate: (settings: GameSettingsType) => void
   onStartGame: () => void
+  publisherLogo?: string | null
 }
 
-export default function GameSettings({ settings, onSettingsUpdate, onStartGame }: GameSettingsProps) {
+export default function GameSettings({ settings, onSettingsUpdate, onStartGame, publisherLogo }: GameSettingsProps) {
   const [localSettings, setLocalSettings] = useState<GameSettingsType>(settings)
 
   const questionCounts = [10, 20, 30, 40] as const
@@ -35,6 +37,11 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
       ></div>
 
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 py-6">
+        {publisherLogo && (
+          <div className="absolute top-4 left-4 z-30">
+            <PublisherLogoBadge logoUrl={publisherLogo} size="sm" />
+          </div>
+        )}
         <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
           <AudioControls />
         </div>

@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react"
 import type { GameState } from "@/types/game"
 import { useAudio } from "@/components/AudioProvider"
 import AudioControls from "@/components/AudioControls"
+import PublisherLogoBadge from "@/components/PublisherLogoBadge"
 import { getAssetPath } from "@/lib/asset-path"
 
 interface LadderProgressProps {
@@ -11,9 +12,10 @@ interface LadderProgressProps {
   onContinue: () => void
   stepsGained: number
   correctTeam: "A" | "B" | null
+  publisherLogo?: string | null
 }
 
-export default function LadderProgress({ gameState, onContinue, stepsGained, correctTeam }: LadderProgressProps) {
+export default function LadderProgress({ gameState, onContinue, stepsGained, correctTeam, publisherLogo }: LadderProgressProps) {
   const [showAnimation, setShowAnimation] = useState(false)
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]) // Timeout'ları takip et
   const { playSfx } = useAudio()
@@ -433,7 +435,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
       {renderTeamCharacter("B")}
 
       {/* Question Counter */}
-      <div className="absolute top-4 left-4 z-30">
+      <div className="absolute top-4 left-4 z-30 flex flex-col items-start gap-3">
         <div className="relative inline-block">
           <img 
             src={getAssetPath("/assets/soru-sayac-banneri.png")} 
@@ -444,6 +446,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
             SORU {gameState.currentQuestion}/{gameState.totalQuestions}
           </span>
         </div>
+        {publisherLogo && <PublisherLogoBadge logoUrl={publisherLogo} size="sm" />}
       </div>
 
       {/* Score Panel - Ortada, Sonraki Soru butonunun üstünde */}

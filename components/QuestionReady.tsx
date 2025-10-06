@@ -2,15 +2,17 @@
 
 import type { GameState } from "@/types/game"
 import AudioControls from "@/components/AudioControls"
+import PublisherLogoBadge from "@/components/PublisherLogoBadge"
 import { getAssetPath } from "@/lib/asset-path"
 
 interface QuestionReadyProps {
   gameState: GameState
   onShowQuestion: () => void
   currentTurn: "A" | "B"
+  publisherLogo?: string | null
 }
 
-export default function QuestionReady({ gameState, onShowQuestion, currentTurn }: QuestionReadyProps) {
+export default function QuestionReady({ gameState, onShowQuestion, currentTurn, publisherLogo }: QuestionReadyProps) {
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden">
       <div
@@ -25,19 +27,22 @@ export default function QuestionReady({ gameState, onShowQuestion, currentTurn }
 
       <div className="relative z-10 h-full">
         {/* Top Section - Question Counter and Timer */}
-  <div className="absolute top-0 left-0 right-0 flex items-start justify-between w-full pl-8 pr-16 md:pr-20 pt-6 z-20">
+  <div className="absolute top-0 left-0 right-0 flex items-start justify-between w-full pl-8 pr-16 md:pr-20 pt-6 z-20 pointer-events-none">
           {/* Question Counter Banner */}
-          <div className="relative">
-            <img src={getAssetPath("/assets/soru-sayac-banneri.png")} alt="Question Banner" className="h-16 w-auto" />
-            <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '-15px' }}>
-              <span className="text-amber-900 font-bold text-lg drop-shadow-sm">
-                Soru {gameState.currentQuestion}/{gameState.settings.questionCount}
-              </span>
+          <div className="relative flex flex-col items-start gap-3">
+            <div className="relative">
+              <img src={getAssetPath("/assets/soru-sayac-banneri.png")} alt="Question Banner" className="h-16 w-auto" />
+              <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '0px' }}>
+                <span className="text-amber-900 font-bold text-lg drop-shadow-sm">
+                  Soru {gameState.currentQuestion}/{gameState.settings.questionCount}
+                </span>
+              </div>
             </div>
+            {publisherLogo && <PublisherLogoBadge logoUrl={publisherLogo} size="sm" />}
           </div>
 
           {/* Timer */}
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col items-end gap-2 pointer-events-auto">
             <div className="relative">
               <img src={getAssetPath("/assets/sure.png")} alt="Timer" className="h-14 w-auto" />
               <div className="absolute inset-0 flex items-center justify-center">

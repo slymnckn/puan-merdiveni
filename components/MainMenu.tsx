@@ -1,13 +1,15 @@
 "use client"
 
 import AudioControls from "@/components/AudioControls"
+import PublisherLogoBadge from "@/components/PublisherLogoBadge"
 import { getAssetPath } from "@/lib/asset-path"
 
 interface MainMenuProps {
   onStartGame: () => void
+  publisherLogo?: string | null
 }
 
-export default function MainMenu({ onStartGame }: MainMenuProps) {
+export default function MainMenu({ onStartGame, publisherLogo }: MainMenuProps) {
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden">
       <div
@@ -21,6 +23,11 @@ export default function MainMenu({ onStartGame }: MainMenuProps) {
       ></div>
 
       <div className="relative z-10 h-full flex flex-col items-center justify-between px-8 pt-4 pb-12">
+        {publisherLogo && (
+          <div className="absolute top-4 left-4">
+            <PublisherLogoBadge logoUrl={publisherLogo} size="sm" />
+          </div>
+        )}
         <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
           <AudioControls />
         </div>

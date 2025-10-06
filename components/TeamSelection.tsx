@@ -4,15 +4,17 @@ import { useState } from "react"
 import { characters } from "@/data/characters"
 import type { Team, Character } from "@/types/game"
 import AudioControls from "@/components/AudioControls"
+import PublisherLogoBadge from "@/components/PublisherLogoBadge"
 import { getAssetPath } from "@/lib/asset-path"
 
 interface TeamSelectionProps {
   teams: Team[]
   onTeamsUpdate: (teams: Team[]) => void
   onContinue: () => void
+  publisherLogo?: string | null
 }
 
-export default function TeamSelection({ teams, onTeamsUpdate, onContinue }: TeamSelectionProps) {
+export default function TeamSelection({ teams, onTeamsUpdate, onContinue, publisherLogo }: TeamSelectionProps) {
   const [localTeams, setLocalTeams] = useState<Team[]>(teams)
 
   const updateTeamName = (teamId: "A" | "B", name: string) => {
@@ -42,6 +44,11 @@ export default function TeamSelection({ teams, onTeamsUpdate, onContinue }: Team
       ></div>
 
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 py-8">
+        {publisherLogo && (
+          <div className="absolute top-4 left-4 z-30">
+            <PublisherLogoBadge logoUrl={publisherLogo} size="sm" />
+          </div>
+        )}
         <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
           <AudioControls />
         </div>

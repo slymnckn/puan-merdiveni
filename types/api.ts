@@ -9,6 +9,8 @@ export interface ApiQuestion {
   correctAnswerId: number
   publisher_id: number
   image_url?: string
+  logo_url?: string
+  available_logos?: string[]
 }
 
 export interface Advertisement {
@@ -39,6 +41,7 @@ export interface GameQuestion {
   correct_answer: 'A' | 'B' | 'C' | 'D' | 'true' | 'false'
   publisher_id: number
   image_url?: string
+  publisher_logo_url?: string
 }
 
 // API Service Configuration
