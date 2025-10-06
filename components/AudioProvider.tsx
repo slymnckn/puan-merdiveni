@@ -28,8 +28,8 @@ type AudioContextValue = {
 }
 
 const MUSIC_SOURCES: Record<MusicTrack, string> = {
-  lobby: getAssetPath("/audio/music/lobby-music.wav"),
-  game: getAssetPath("/audio/music/game-music.wav"),
+  lobby: getAssetPath("/audio/music/lobby-music.ogg"),
+  game: getAssetPath("/audio/music/game-music.ogg"),
 }
 
 const SFX_SOURCES: Record<SfxKey, string> = {

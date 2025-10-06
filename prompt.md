@@ -1109,7 +1109,17 @@ Cevap doğruysa:
       (6 karakter görseli)
     /audio
       fx/
+        button.mp3
+        correct-answer.wav
+        wrong-answer.wav
+        surprise.wav
+        end-game.mp3
+        1-step.mp3
+        2-step.mp3
+        3-step.mp3
       music/
+        lobby-music.ogg
+        game-music.ogg
     /hero
       ...
 
@@ -1186,6 +1196,7 @@ function convertGameQuestionToQuestion(gq: GameQuestion): Question {
 - Fonksiyon, `http://`, `https://` veya `//` ile başlayan tam URL'leri olduğu gibi döndürür; bu sayede uzak CDN/HTTP içerikleri bozulmaz.
 - Tüm bileşenler yerel görseller, ikonlar, ses dosyaları ve arka plan görselleri için `getAssetPath` ile normalize edilmiş yolları kullanmalıdır. Bu kullanım hem `<img>` hem de `next/image` ve inline `backgroundImage` stillerinde uygulanır.
 - Ses dosyaları da aynı fonksiyon üzerinden bağlanır; `AudioProvider` tüm kaynakları `getAssetPath` ile tanımlar.
+- Lobi ve oyun müzikleri `.ogg` formatındadır (`public/audio/music/lobby-music.ogg`, `public/audio/music/game-music.ogg`); eski `.wav` sürümleri repodan kaldırılmıştır, bu nedenle yeni eklenen müzikler de OGG olarak sağlanmalıdır.
 - `next.config.mjs`, build sırasında aynı ortam değişkenini okuyarak `basePath`, `assetPrefix` ve `trailingSlash` ayarlarını set eder; bu sayede `/_next/*` betikleri ve stilleri de alt dizine göre otomatik yönlendirilir.
 
 ### 7.3 True/False Cevap Kontrolü
@@ -1417,7 +1428,7 @@ function determineWinner(teams: Team[], target: number): "A" | "B" | "tie" {
   - `pnpm build` → `out/` klasörü oluşur.
   - `pnpm dlx serve out` komutu ile klasörü basit bir HTTP sunucusunda barındırabilirsiniz.
 - `output: "export"` nedeniyle `next start` kullanılmaz; dağıtım statik dosyaların herhangi bir CDN veya statik hosting hizmetine yüklenmesiyle yapılır.
-- `images.unoptimized = true` olduğu için tüm `<img>` etiketleri doğrudan `/public` altındaki varlıklara referans verir; ek optimize aşaması gerekmiyor.
+- `images.unoptimized = true` olduğu için tüm `<img>` etiketleri doğrudan `/public` altındaki varlıklara referans verir; build sırasında otomatik sıkıştırma yapılmaz. Lossless optimizasyon için `pnpm optimize:images` komutu (optipng/jpegtran tabanlı) eklenmiştir ve yeni görseller eklendiğinde çalıştırılmalıdır.
 
 ---
 

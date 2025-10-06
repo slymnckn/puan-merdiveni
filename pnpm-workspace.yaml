@@ -1,0 +1,3 @@
+onlyBuiltDependencies:
+  - jpegtran-bin
+  - optipng-bin

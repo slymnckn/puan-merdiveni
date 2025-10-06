@@ -169,6 +169,15 @@ pnpm build
 pnpm start
 ```
 
+## 🖼️ Asset Optimizasyonu
+
+- Tüm statik PNG/JPEG görsellerini lossless olarak sıkıştırmak için `pnpm optimize:images` komutunu çalıştırın.
+- Uygulama, varsayılan olarak `public/` klasöründeki 58 görseli tarar ve `optipng`/`jpegtran` tabanlı optimizasyon uygular.
+- Önce sonuçları görmek isterseniz `pnpm optimize:images -- --dry-run` kullanın; gerçek değişiklik yapmaz.
+- Farklı bir klasörü hedeflemek için `pnpm optimize:images -- --dir public/assets` gibi bir yol belirtebilir, gerekirse `--force` ile dosya büyüse bile yeniden yazdırabilirsiniz.
+- 06.10.2025 itibarıyla mevcut assetler toplam boyutu 28 MB → 20 MB (≈%28 tasarruf) olacak şekilde optimize edilmiştir.
+- Müzik dosyaları `.ogg` (lobby/game) formatına taşınmıştır; önceki `.wav` sürümleri kaldırıldığı için referansların `public/audio/music/*.ogg` altında olduğundan emin olun.
+
 ### Statik Barındırma ve Base Path
 - Oyun, Jenkins pipeline'ı ile `/puan-merdiveni` gibi bir alt klasörde yayınlanır.
 - Statik asset yollarını doğru üretmek için build sırasında `NEXT_PUBLIC_BASE_PATH` değişkenini ayarlayın (ör. `/puan-merdiveni`).
