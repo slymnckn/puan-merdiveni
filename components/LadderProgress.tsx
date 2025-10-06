@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import type { GameState } from "@/types/game"
 import { useAudio } from "@/components/AudioProvider"
 import AudioControls from "@/components/AudioControls"
+import { getAssetPath } from "@/lib/asset-path"
 
 interface LadderProgressProps {
   gameState: GameState
@@ -24,10 +25,33 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
   )
   const [isJumping, setIsJumping] = useState(false)
   const [jumpFrame, setJumpFrame] = useState(1)
+  const preloadedCharacters = useRef(new Set<string>())
+
+  const preloadCharacterFrames = useCallback((characterId: string) => {
+    if (!characterId || preloadedCharacters.current.has(characterId)) {
+      return
+    }
+
+    preloadedCharacters.current.add(characterId)
+
+    const frames = [1, 2, 3]
+    frames.forEach((frame) => {
+      const img = new Image()
+      img.src = getAssetPath(`/hero/animation/${characterId}/${frame}.png`)
+    })
+  }, [])
 
   useEffect(() => {
     playSfxRef.current = playSfx
   }, [playSfx])
+
+  useEffect(() => {
+    gameState.teams.forEach((team) => {
+      if (team.character?.id) {
+        preloadCharacterFrames(team.character.id)
+      }
+    })
+  }, [gameState.teams, preloadCharacterFrames])
 
   useEffect(() => {
     console.log('🎬 LadderProgress animasyonu hazırlanıyor:', { stepsGained, correctTeam })
@@ -194,12 +218,12 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
   }
 
   const getStepAsset = (stepValue: number): string => {
-    if (stepValue >= 50) return "/steps/level-6.png"
-    if (stepValue >= 40) return "/steps/level-5.png"
-    if (stepValue >= 30) return "/steps/level-4.png"
-    if (stepValue >= 20) return "/steps/level-3.png"
-    if (stepValue >= 10) return "/steps/level-2.png"
-    return "/steps/level-1.png"
+    if (stepValue >= 50) return getAssetPath("/steps/level-6.png")
+    if (stepValue >= 40) return getAssetPath("/steps/level-5.png")
+    if (stepValue >= 30) return getAssetPath("/steps/level-4.png")
+    if (stepValue >= 20) return getAssetPath("/steps/level-3.png")
+    if (stepValue >= 10) return getAssetPath("/steps/level-2.png")
+    return getAssetPath("/steps/level-1.png")
   }
 
   // Render a single step cloud
@@ -356,8 +380,8 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
               (character.id === 'hizli-kedi' || character.id === 'minik-dinazor' || 
                character.id === 'sihirbaz' || character.id === 'tekno-robot' ||
                character.id === 'uzay-kasifi' || character.id === 'zeka-ustasi')
-                ? `/hero/animation/${character.id}/${jumpFrame}.png`
-                : character.image
+                ? getAssetPath(`/hero/animation/${character.id}/${jumpFrame}.png`)
+                : getAssetPath(character.image)
             }
             alt={character.name}
             className="w-20 h-20 md:w-24 md:h-24 rounded-full object-contain p-1"
@@ -386,7 +410,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
       {/* Background */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: 'url(/assets/background.png)' }}
+        style={{ backgroundImage: `url(${getAssetPath("/assets/background.png")})` }}
       />
 
       {/* Audio Controls */}
@@ -412,7 +436,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
       <div className="absolute top-4 left-4 z-30">
         <div className="relative inline-block">
           <img 
-            src="/assets/soru-sayac-banneri.png" 
+            src={getAssetPath("/assets/soru-sayac-banneri.png")} 
             alt="Question Counter"
             className="h-14 md:h-16 lg:h-20 w-auto object-contain drop-shadow-xl"
           />
@@ -426,7 +450,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
       <div className="absolute bottom-32 md:bottom-36 left-1/2 transform -translate-x-1/2 z-30">
         <div className="relative inline-block">
           <img 
-            src="/score-scroll.png" 
+            src={getAssetPath("/score-scroll.png")} 
             alt="Score Panel"
             className="w-72 md:w-80 lg:w-96 h-auto object-contain drop-shadow-2xl"
           />
@@ -461,7 +485,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
                         {/* Karakter görseli A/B harfi yerine */}
                         <div className="w-8 h-8 md:w-9 md:h-9 rounded-full overflow-hidden border-2 border-white shadow-lg flex-shrink-0">
                           <img 
-                            src={team?.character?.image || "/placeholder.svg"} 
+                            src={getAssetPath(team?.character?.image || "/placeholder.svg")} 
                             alt={team?.character?.name || `Team ${id}`}
                             className="w-full h-full object-contain p-0.5"
                             style={{
@@ -504,7 +528,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
         <div className="absolute top-4 md:top-6 left-1/2 transform -translate-x-1/2 z-40">
           <div className="relative inline-block animate-pulse">
             <img 
-              src="/golden-banner.png" 
+              src={getAssetPath("/golden-banner.png")} 
               alt="Congratulations Banner"
               className="w-80 md:w-96 lg:w-[28rem] h-auto object-contain drop-shadow-2xl"
             />
@@ -524,7 +548,7 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
       >
         <div className="relative inline-block">
           <img 
-            src="/assets/genel-buton.png" 
+            src={getAssetPath("/assets/genel-buton.png")} 
             alt="Continue Button"
             className="w-40 md:w-48 lg:w-56 h-auto object-contain drop-shadow-2xl"
           />

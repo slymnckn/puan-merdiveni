@@ -76,8 +76,6 @@ quiz-game/
 ## 🎮 Oyun Özellikleri
 
 ### Ekranlar
-1. **Reklam Ekranı** - Oyun öncesi reklam gösterimi
-2. **Ana Menü** - Oyuna başlama
 3. **Takım Seçimi** - 2 takım, 6 karakter seçimi (3x2 grid)
 4. **Oyun Ayarları** - Soru sayısı (10/20/30/40), Mod (Süreli/Süresiz), Sürpriz sistemi
 5. **Soru Hazır** - Soruyu göster butonu
@@ -92,9 +90,6 @@ quiz-game/
 - **Sürpriz Sistemi:** Her 3 soruda zar (1-6) + özel seçenekler
 - **Merdiven:** Sliding window (10 basamak görünür), her 10 basamakta renk değişimi
 - **Hedef:** 10 soru→25, 20→50, 30→75, 40→100 basamak
-
----
-
 ## 🔌 API Entegrasyonu
 
 ### Endpoints
@@ -107,26 +102,37 @@ POST /api/jenkins/callback                      # Callback
 
 ### Fallback
 - API başarısız → Placeholder sorular
-- Yetersiz soru → Placeholder eklenir
+# Production build (base path otomatik olarak /puan-merdiveni)
 
----
 
-## 🎨 Tasarım
+# Base path'i manuel override etmek isterseniz
+NEXT_PUBLIC_BASE_PATH=/farkli-yol pnpm build
 
-### Font
-- **Baloo 2** (400, 500, 600, 700, 800)
-- Oyun ve çocuk uygulamaları için özel
-
-### Renkler
-#### Takım A Merdiven Renkleri
-1. Mor (1-10): `#5B21B6 → #8B5CF6`
-2. Mavi (11-20): `#1E40AF → #3B82F6`
-3. Turkuaz (21-30): `#0F766E → #14B8A6`
-4. Yeşil (31-40): `#15803D → #22C55E`
-5. Sarı (41-50): `#CA8A04 → #EAB308`
-6. Altın (51+): `#B45309 → #F59E0B`
-
+# Base path'siz lokal paketleme gerekiyorsa
+### Build
+```bash
+# Production build (base path otomatik olarak /puan-merdiveni)
 #### Takım B Merdiven Renkleri
+
+# Varsayılan base path'i manuel override etmek isterseniz
+NEXT_PUBLIC_BASE_PATH=/farkli-yol pnpm build
+# veya
+BUILD_BASE_PATH=/farkli-yol pnpm build
+
+# Base path'siz lokal paket ihtiyacı için
+DISABLE_BASE_PATH=true pnpm build
+
+# Statik export'u hızlıca görmek için
+pnpm dlx serve out
+```
+
+### Statik Barındırma ve Base Path
+- Oyun, Jenkins pipeline'ı ile `/puan-merdiveni` gibi bir alt klasörde yayınlanır.
+- `pnpm build` komutu varsayılan olarak `NEXT_PUBLIC_BASE_PATH=/puan-merdiveni` değerini atar ve `next.config.mjs` aynı değeri `basePath`/`assetPrefix` için kullanır.
+- Farklı bir path gerekiyorsa `NEXT_PUBLIC_BASE_PATH` veya `BUILD_BASE_PATH` değişkenlerinden biri ile override edin; tamamen kök dizine paketlemek için `DISABLE_BASE_PATH=true pnpm build` kullanın.
+- Tüm bileşenler `lib/asset-path.ts` içindeki `getAssetPath` yardımıyla ikonları, görselleri ve ses dosyalarını bu base path ile birleştirir.
+- Uzak (http/https) URL'ler otomatik olarak olduğu gibi bırakılır; sadece yerel yollar normalize edilir.
+- `next.config.mjs`, aynı değişkeni kullanarak `basePath`, `assetPrefix` ve `trailingSlash` ayarlarını belirler; build script'i bu değişkeni sizin yerinize ayarlar.
 1. Pembe (1-10): `#C026D3 → #E879F9`
 2. Pembe-Kırmızı (11-20): `#BE123C → #FB7185`
 3. Turuncu (21-30): `#C2410C → #FB923C`
@@ -163,6 +169,14 @@ pnpm build
 pnpm start
 ```
 
+### Statik Barındırma ve Base Path
+- Oyun, Jenkins pipeline'ı ile `/puan-merdiveni` gibi bir alt klasörde yayınlanır.
+- Statik asset yollarını doğru üretmek için build sırasında `NEXT_PUBLIC_BASE_PATH` değişkenini ayarlayın (ör. `/puan-merdiveni`).
+	- Örnek: `NEXT_PUBLIC_BASE_PATH=/puan-merdiveni pnpm build`
+- Tüm bileşenler `lib/asset-path.ts` içindeki `getAssetPath` yardımıyla ikonları, görselleri ve ses dosyalarını bu base path ile birleştirir.
+- Uzak (http/https) URL'ler otomatik olarak olduğu gibi bırakılır; sadece yerel yollar normalize edilir.
+- `next.config.mjs`, aynı değişkeni kullanarak `basePath`, `assetPrefix` ve `trailingSlash` ayarlarını belirler. Bu nedenle build çalıştırdığınız terminal oturumunda değişkeni set etmeyi unutmayın.
+
 ---
 
 ## 📖 Dokümantasyon
@@ -172,6 +186,9 @@ pnpm start
 
 ### Geliştirici Kılavuzu
 👉 **`.copilot-instructions.md`** - GitHub Copilot talimatları ve güncelleme kuralları
+
+### CI/CD
+- **`ci/pipeline.groovy`** dosyası Jenkins pipeline tanımını içerir. Pipeline artık `GAME_ID=6` için `puan-merdiveni` sürümünü destekler ve `out/` klasöründeki tüm statik dosyaları paketler.
 
 ### Bölümler (prompt.md)
 1. Teknoloji Stack

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { apiService } from "@/lib/api-service"
+import { getAssetPath } from "@/lib/asset-path"
 
 interface PublisherLogoProps {
   publisherId?: number
@@ -16,12 +17,13 @@ export default function PublisherLogo({
   className = "h-12 w-auto",
   alt = "Publisher Logo"
 }: PublisherLogoProps) {
-  const [logoUrl, setLogoUrl] = useState<string>(fallbackLogo)
+  const normalizedFallbackLogo = getAssetPath(fallbackLogo)
+  const [logoUrl, setLogoUrl] = useState<string>(normalizedFallbackLogo)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!publisherId || publisherId === 0) {
-      setLogoUrl(fallbackLogo)
+      setLogoUrl(normalizedFallbackLogo)
       return
     }
 
@@ -31,24 +33,24 @@ export default function PublisherLogo({
       try {
         const logo = await apiService.fetchPublisherLogo(publisherId)
         if (logo) {
-          setLogoUrl(logo)
+          setLogoUrl(getAssetPath(logo))
         } else {
-          setLogoUrl(fallbackLogo)
+          setLogoUrl(normalizedFallbackLogo)
         }
       } catch (err) {
         console.error('Failed to fetch publisher logo:', err)
-        setLogoUrl(fallbackLogo)
+        setLogoUrl(normalizedFallbackLogo)
       } finally {
         setLoading(false)
       }
     }
 
     fetchLogo()
-  }, [publisherId, fallbackLogo])
+  }, [publisherId, normalizedFallbackLogo])
 
   const handleImageError = () => {
-    if (logoUrl !== fallbackLogo) {
-      setLogoUrl(fallbackLogo)
+    if (logoUrl !== normalizedFallbackLogo) {
+      setLogoUrl(normalizedFallbackLogo)
     }
   }
 

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import type { GameSettingsType } from "@/types/game"
 import AudioControls from "@/components/AudioControls"
+import { getAssetPath } from "@/lib/asset-path"
 
 interface GameSettingsProps {
   settings: GameSettingsType
@@ -26,7 +27,7 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
       <div
         className="absolute inset-0 w-full h-full"
         style={{
-          backgroundImage: "url(/assets/background.png)",
+          backgroundImage: `url(${getAssetPath("/assets/background.png")})`,
           backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
@@ -39,7 +40,7 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
         </div>
         {/* Title */}
         <div className="relative mb-6">
-          <img src="/assets/soru-sayac-banneri.png" alt="Game Settings Title" className="h-18 w-auto" />
+          <img src={getAssetPath("/assets/soru-sayac-banneri.png")} alt="Game Settings Title" className="h-18 w-auto" />
           <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '-10px' }}>
             <span className="text-amber-900 font-bold text-base drop-shadow-sm">OYUN AYARLARI</span>
           </div>
@@ -47,7 +48,7 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
 
         {/* Settings Panel */}
         <div className="relative mb-6 w-full max-w-3xl">
-          <img src="/assets/soru-arkasi.png" alt="Settings Panel" className="w-full h-auto" />
+          <img src={getAssetPath("/assets/soru-arkasi.png")} alt="Settings Panel" className="w-full h-auto" />
           <div className="absolute inset-0 flex flex-col items-center justify-center p-8 pt-12 space-y-5">
             {/* Question Count Selection */}
             <div className="flex flex-col items-center space-y-3">
@@ -62,7 +63,7 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
                     }`}
                   >
                     <img 
-                      src={localSettings.questionCount === count ? "/assets/open-açık-butonu.png" : "/assets/soru-sayısı-butonu.png"} 
+                      src={getAssetPath(localSettings.questionCount === count ? "/assets/open-açık-butonu.png" : "/assets/soru-sayısı-butonu.png")} 
                       alt={`${count} Questions`} 
                       className="w-16 h-16 object-contain"
                     />
@@ -85,7 +86,7 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
                   }`}
                 >
                   <img 
-                    src={localSettings.gameMode === "timed" ? "/assets/selected-süre.png" : "/assets/süreli-süresiz-butonu.png"} 
+                    src={getAssetPath(localSettings.gameMode === "timed" ? "/assets/selected-süre.png" : "/assets/süreli-süresiz-butonu.png")} 
                     alt="Timed Mode" 
                     className="h-12 w-auto min-w-[120px]" 
                   />
@@ -101,7 +102,7 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
                   }`}
                 >
                   <img 
-                    src={localSettings.gameMode === "untimed" ? "/assets/selected-süre.png" : "/assets/süreli-süresiz-butonu.png"} 
+                    src={getAssetPath(localSettings.gameMode === "untimed" ? "/assets/selected-süre.png" : "/assets/süreli-süresiz-butonu.png")} 
                     alt="Untimed Mode" 
                     className="h-12 w-auto min-w-[120px]" 
                   />
@@ -123,7 +124,7 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
                   }`}
                 >
                   <img 
-                    src={localSettings.surpriseSystem ? "/assets/open-açık-butonu.png" : "/assets/soru-sayısı-butonu.png"} 
+                    src={getAssetPath(localSettings.surpriseSystem ? "/assets/open-açık-butonu.png" : "/assets/soru-sayısı-butonu.png")} 
                     alt="Surprise System On" 
                     className="w-16 h-16 object-contain"
                   />
@@ -139,7 +140,7 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
                   }`}
                 >
                   <img 
-                    src={!localSettings.surpriseSystem ? "/assets/open-açık-butonu.png" : "/assets/soru-sayısı-butonu.png"} 
+                    src={getAssetPath(!localSettings.surpriseSystem ? "/assets/open-açık-butonu.png" : "/assets/soru-sayısı-butonu.png")} 
                     alt="Surprise System Off" 
                     className="w-16 h-16 object-contain"
                   />
@@ -154,7 +155,7 @@ export default function GameSettings({ settings, onSettingsUpdate, onStartGame }
 
         {/* Start Game Button */}
         <button onClick={onStartGame} className="relative group transition-transform hover:scale-105">
-          <img src="/assets/correct-button.png" alt="Start Game" className="h-14 w-auto min-w-[160px]" />
+          <img src={getAssetPath("/assets/correct-button.png")} alt="Start Game" className="h-14 w-auto min-w-[160px]" />
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-white font-bold text-sm drop-shadow-lg">OYUNA BAŞLA</span>
           </div>

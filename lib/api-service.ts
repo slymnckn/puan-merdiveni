@@ -1,14 +1,57 @@
 import type { ApiQuestion, Advertisement, PublisherLogo, GameQuestion, ApiConfig } from '@/types/api'
 
+const sanitizeBaseUrl = (value?: string | null): string => {
+  if (!value) return 'https://etkinlik.app/api'
+  const trimmed = value.trim()
+  if (!trimmed) return 'https://etkinlik.app/api'
+  const normalized = trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed
+  return normalized
+}
+
+const isAbsoluteUrl = (value: string): boolean => /^https?:\/\//i.test(value)
+
+const stripLeadingSlash = (value: string): string => (value.startsWith('/') ? value.slice(1) : value)
+
 class ApiService {
   private config: ApiConfig = {
-    baseUrl: 'https://etkinlik.app/api',
+    baseUrl: sanitizeBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL),
     headers: {
       'Accept': 'application/json',
       'User-Agent': 'WebGame/1.0'
     },
     retryLimit: 3,
     retryDelay: 1000
+  }
+
+  setBaseUrl(baseUrl?: string | null) {
+    const sanitized = sanitizeBaseUrl(baseUrl)
+    this.config.baseUrl = sanitized
+  }
+
+  getBaseUrl() {
+    return this.config.baseUrl
+  }
+
+  private buildUrl(pathOrUrl: string, fallbackPath: string): string {
+    if (!pathOrUrl) {
+      return `${this.config.baseUrl}/${stripLeadingSlash(fallbackPath)}`
+    }
+
+    const trimmed = pathOrUrl.trim()
+
+    if (isAbsoluteUrl(trimmed)) {
+      return trimmed
+    }
+
+    if (trimmed.startsWith('/')) {
+      return `${this.config.baseUrl}/${stripLeadingSlash(trimmed)}`
+    }
+
+    if (trimmed.includes('/')) {
+      return `${this.config.baseUrl}/${stripLeadingSlash(trimmed)}`
+    }
+
+    return `${this.config.baseUrl}/${stripLeadingSlash(fallbackPath.replace('{code}', trimmed))}`
   }
 
   private async fetchWithRetry(url: string, options: RequestInit = {}): Promise<Response> {
@@ -48,15 +91,153 @@ class ApiService {
 
   async fetchQuestions(code: string): Promise<GameQuestion[]> {
     try {
-      const url = `${this.config.baseUrl}/unity/question-groups/code/${code}`
+      const url = this.buildUrl(code, 'unity/question-groups/code/{code}')
       const response = await this.fetchWithRetry(url)
-      const apiQuestions: ApiQuestion[] = await response.json()
+      const payload = await response.json()
+      const apiQuestions = this.extractQuestionsFromPayload(payload)
+
+      if (apiQuestions.length === 0) {
+        console.warn('Question response did not contain any usable questions.', {
+          code,
+          payloadSummary: this.getPayloadSummary(payload)
+        })
+        return this.getFallbackQuestions()
+      }
 
       return this.convertQuestionsToGameFormat(apiQuestions)
     } catch (error) {
       console.error('Failed to fetch questions from API:', error)
       return this.getFallbackQuestions()
     }
+  }
+
+  private getPayloadSummary(payload: unknown) {
+    if (!payload || typeof payload !== 'object') {
+      return payload
+    }
+
+    const entries = Object.entries(payload as Record<string, unknown>)
+      .slice(0, 8)
+      .map(([key, value]) => {
+        if (Array.isArray(value)) {
+          return `${key}: [${value.length}]`
+        }
+        if (value && typeof value === 'object') {
+          return `${key}: {${Object.keys(value as Record<string, unknown>).slice(0, 5).join(', ')}}`
+        }
+        return `${key}: ${value}`
+      })
+
+    return `{ ${entries.join(', ')} }`
+  }
+
+  private extractQuestionsFromPayload(payload: unknown): ApiQuestion[] {
+    const queue: unknown[] = [payload]
+    const visited = new WeakSet<object>()
+    const results: ApiQuestion[] = []
+
+    while (queue.length > 0) {
+      const current = queue.shift()
+      if (!current) {
+        continue
+      }
+
+      if (Array.isArray(current)) {
+        for (const item of current) {
+          if (!item) {
+            continue
+          }
+
+          if (this.isApiQuestion(item)) {
+            results.push(item)
+            continue
+          }
+
+          if (typeof item === 'object') {
+            queue.push(item)
+          }
+        }
+        continue
+      }
+
+      if (typeof current !== 'object') {
+        continue
+      }
+
+      const obj = current as Record<string, unknown>
+
+      if (visited.has(obj)) {
+        continue
+      }
+
+      visited.add(obj)
+
+      if (this.isApiQuestion(obj)) {
+        results.push(obj)
+        continue
+      }
+
+      const candidateKeys = [
+        'questions',
+        'question_list',
+        'items',
+        'results',
+        'data',
+        'questionGroup',
+        'question_group',
+        'question_group_items',
+        'questionGroupQuestions',
+        'question_group_questions',
+        'questionItems',
+        'question_items',
+        'questionData',
+        'question_data',
+        'records',
+        'values',
+        'content'
+      ]
+
+      for (const key of candidateKeys) {
+        if (key in obj) {
+          queue.push(obj[key])
+        }
+      }
+
+      if ('question' in obj) {
+        queue.push(obj['question'])
+      }
+    }
+
+    return results
+  }
+
+  private isApiQuestion(value: unknown): value is ApiQuestion {
+    if (!value || typeof value !== 'object') {
+      return false
+    }
+
+    const candidate = value as Partial<ApiQuestion>
+
+    const answerCandidates = [
+      candidate.answers,
+      (candidate as unknown as { answer_list?: unknown }).answer_list,
+      (candidate as unknown as { choices?: unknown }).choices,
+      (candidate as unknown as { options?: unknown }).options,
+      (candidate as unknown as { options_list?: unknown }).options_list
+    ]
+
+    const hasArrayAnswers = answerCandidates.some((entry) => Array.isArray(entry))
+    const hasObjectOptions = answerCandidates.some((entry) => entry && typeof entry === 'object')
+
+    return (
+      typeof candidate.question_text === 'string' &&
+      (hasArrayAnswers || hasObjectOptions || typeof (candidate as { correct_answer?: unknown }).correct_answer === 'string')
+    )
+
+    return (
+      typeof candidate.question_text === 'string' &&
+      Array.isArray(candidate.answers)
+    )
   }
 
   async fetchAdvertisements(): Promise<Advertisement[]> {
@@ -110,41 +291,200 @@ class ApiService {
   }
 
   private convertQuestionsToGameFormat(apiQuestions: ApiQuestion[]): GameQuestion[] {
-    return apiQuestions.map(q => {
-      const options = { A: '', B: '', C: '', D: '' }
-      const optionKeys = ['A', 'B', 'C', 'D'] as const
-      let correctAnswer: 'A' | 'B' | 'C' | 'D' = 'A'
+    return apiQuestions.map((question, index) => {
+  const questionRecord = this.ensureRecord(question)
+  const answerList = this.extractAnswerList(questionRecord)
 
-      q.answers.forEach((answer, index) => {
-        if (index < 4) {
-          const key = optionKeys[index]
-          options[key] = answer.answer_text
-          if (answer.is_correct) {
-            correctAnswer = key
-          }
+      const correctAnswerId = this.toNumber(questionRecord.correctAnswerId ?? questionRecord.correct_answer_id)
+      const correctAnswerIndexRaw = this.toNumber(questionRecord.correctAnswerIndex ?? questionRecord.correct_answer_index)
+      const zeroBasedCorrectIndex = correctAnswerIndexRaw !== null
+        ? Math.max(0, correctAnswerIndexRaw >= 1 ? correctAnswerIndexRaw - 1 : correctAnswerIndexRaw)
+        : null
+
+      const normalizedAnswers = answerList.map((rawAnswer, answerIndex) => {
+        const answerRecord = this.ensureRecord(rawAnswer)
+        const fallbackLabel = answerIndex === 0 ? 'Doğru' : answerIndex === 1 ? 'Yanlış' : ''
+        const text = this.toString(
+          answerRecord.answer_text ??
+          answerRecord.text ??
+          answerRecord.answer ??
+          answerRecord.label ??
+          fallbackLabel
+        )
+
+        const explicitCorrect = this.toBoolean(
+          answerRecord.is_correct ??
+          answerRecord.isCorrect ??
+          answerRecord.correct ??
+          answerRecord.is_true
+        )
+
+        const answerId = this.toNumber(answerRecord.id ?? answerRecord.answer_id ?? answerRecord.answerId)
+        const derivedCorrectFromId = correctAnswerId !== null && answerId !== null
+          ? correctAnswerId === answerId
+          : false
+
+        return {
+          text,
+          isCorrect: explicitCorrect ?? derivedCorrectFromId,
         }
       })
 
-      // Determine question type based on answer count
-      const answerCount = q.answers.length
+      const baseOptions: Record<'A' | 'B' | 'C' | 'D', string> = {
+        A: '',
+        B: '',
+        C: '',
+        D: ''
+      }
+      const optionKeys = ['A', 'B', 'C', 'D'] as const
+
       let questionType: 'multiple_choice' | 'true_false' | 'classic' = 'multiple_choice'
-      
-      if (answerCount === 2) {
-        questionType = 'true_false'
-      } else if (answerCount === 0) {
+      let correctAnswer: 'A' | 'B' | 'C' | 'D' | 'true' | 'false' = 'A'
+
+      const explicitType = this.toString(questionRecord.type ?? questionRecord.question_type).toLowerCase()
+
+      if (explicitType === 'classic') {
         questionType = 'classic'
+        baseOptions.A = normalizedAnswers[0]?.text ?? ''
+        correctAnswer = 'A'
+      } else if (explicitType === 'true_false' || normalizedAnswers.length === 2) {
+        questionType = 'true_false'
+
+        baseOptions.A = normalizedAnswers[0]?.text || 'Doğru'
+        baseOptions.B = normalizedAnswers[1]?.text || 'Yanlış'
+
+        const trueIsCorrect = normalizedAnswers[0]?.isCorrect ?? false
+        const falseIsCorrect = normalizedAnswers[1]?.isCorrect ?? false
+
+        if (trueIsCorrect && !falseIsCorrect) {
+          correctAnswer = 'true'
+        } else if (!trueIsCorrect && falseIsCorrect) {
+          correctAnswer = 'false'
+        } else if (zeroBasedCorrectIndex === 1) {
+          correctAnswer = 'false'
+        } else {
+          correctAnswer = 'true'
+        }
+      } else if (normalizedAnswers.length === 0) {
+        questionType = 'classic'
+        baseOptions.A = ''
+        correctAnswer = 'A'
+      } else {
+        normalizedAnswers.forEach((answer, answerIndex) => {
+          if (answerIndex < optionKeys.length) {
+            const key = optionKeys[answerIndex]
+            baseOptions[key] = answer.text
+            if (answer.isCorrect) {
+              correctAnswer = key
+            }
+          }
+        })
+
+        if (!normalizedAnswers.some((answer) => answer.isCorrect) && zeroBasedCorrectIndex !== null) {
+          const boundedIndex = Math.max(0, Math.min(normalizedAnswers.length - 1, zeroBasedCorrectIndex))
+          correctAnswer = optionKeys[boundedIndex] ?? 'A'
+        }
       }
 
+      const imageUrl = this.toString(
+        questionRecord.image_url ??
+        questionRecord.image ??
+        questionRecord.imagePath ??
+        questionRecord.image_path ??
+        ''
+      ) || undefined
+
+      const publisherId = this.toNumber(questionRecord.publisher_id) ?? 0
+
+      const identifier = this.toNumber(questionRecord.id) ?? index + 1
+
       return {
-        id: q.id,
+        id: identifier,
         type: questionType,
-        question_text: q.question_text,
-        options,
+        question_text: this.toString(
+          questionRecord.question_text ??
+          questionRecord.questionText ??
+          questionRecord.text ??
+          ''
+        ),
+        options: baseOptions,
         correct_answer: correctAnswer,
-        publisher_id: q.publisher_id,
-        image_url: q.image_url
+        publisher_id: publisherId,
+        image_url: imageUrl
       }
     })
+  }
+
+  private ensureRecord(value: unknown): Record<string, unknown> {
+    if (value && typeof value === 'object') {
+      return value as Record<string, unknown>
+    }
+    return {}
+  }
+
+  private toString(value: unknown, fallback = ''): string {
+    if (typeof value === 'string') {
+      return value
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value)
+    }
+    return fallback
+  }
+
+  private toNumber(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value
+    }
+    if (typeof value === 'string') {
+      const parsed = Number(value)
+      return Number.isFinite(parsed) ? parsed : null
+    }
+    return null
+  }
+
+  private toBoolean(value: unknown): boolean | null {
+    if (typeof value === 'boolean') {
+      return value
+    }
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase()
+      if (['1', 'true', 'yes', 'correct'].includes(normalized)) {
+        return true
+      }
+      if (['0', 'false', 'no', 'wrong'].includes(normalized)) {
+        return false
+      }
+    }
+    return null
+  }
+
+  private extractAnswerList(questionRecord: Record<string, unknown>): unknown[] {
+    const possibleArrays = [
+      questionRecord.answers,
+      questionRecord.answer_list,
+      questionRecord.answerList,
+      questionRecord.choices,
+      questionRecord.options,
+      questionRecord.options_list,
+      questionRecord.optionsList,
+      questionRecord.variants
+    ]
+
+    for (const entry of possibleArrays) {
+      if (Array.isArray(entry)) {
+        return entry
+      }
+
+      if (entry && typeof entry === 'object') {
+        const values = Object.values(entry as Record<string, unknown>)
+        if (values.length > 0) {
+          return values
+        }
+      }
+    }
+
+    return []
   }
 
   private getFallbackQuestions(): GameQuestion[] {

@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
+import { getAssetPath } from "@/lib/asset-path"
 
 type MusicTrack = "lobby" | "game"
 type StepVariant = "step-1" | "step-2" | "step-3"
@@ -27,19 +28,19 @@ type AudioContextValue = {
 }
 
 const MUSIC_SOURCES: Record<MusicTrack, string> = {
-  lobby: "/audio/music/lobby-music.wav",
-  game: "/audio/music/game-music.wav",
+  lobby: getAssetPath("/audio/music/lobby-music.wav"),
+  game: getAssetPath("/audio/music/game-music.wav"),
 }
 
 const SFX_SOURCES: Record<SfxKey, string> = {
-  button: "/audio/fx/button.mp3",
-  correct: "/audio/fx/correct-answer.wav",
-  wrong: "/audio/fx/wrong-answer.wav",
-  surprise: "/audio/fx/surprise.wav",
-  "end-game": "/audio/fx/end-game.mp3",
-  "step-1": "/audio/fx/1-step.mp3",
-  "step-2": "/audio/fx/2-step.mp3",
-  "step-3": "/audio/fx/3-step.mp3",
+  button: getAssetPath("/audio/fx/button.mp3"),
+  correct: getAssetPath("/audio/fx/correct-answer.wav"),
+  wrong: getAssetPath("/audio/fx/wrong-answer.wav"),
+  surprise: getAssetPath("/audio/fx/surprise.wav"),
+  "end-game": getAssetPath("/audio/fx/end-game.mp3"),
+  "step-1": getAssetPath("/audio/fx/1-step.mp3"),
+  "step-2": getAssetPath("/audio/fx/2-step.mp3"),
+  "step-3": getAssetPath("/audio/fx/3-step.mp3"),
 }
 
 const MUSIC_VOLUME = 0.55

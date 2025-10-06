@@ -1073,6 +1073,7 @@ Cevap doğruysa:
 /lib
   api-service.ts           # API çağrıları (fetch wrappers)
   game-utils.ts            # Oyun mantığı fonksiyonları
+  asset-path.ts            # Statik asset yollarını base path ile normalize eder
   utils.ts                 # Genel yardımcı fonksiyonlar
 
 /data
@@ -1178,6 +1179,14 @@ function convertGameQuestionToQuestion(gq: GameQuestion): Question {
   // Classic tipi için özel işlem
 }
 ```
+
+### 7.5 Statik Asset Base Path Yönetimi
+- Uygulama, Jenkins pipeline'ı üzerinden bir alt klasörde (ör. `/puan-merdiveni`) servis edildiğinde tüm statik dosya yollarının bu base path'i dikkate alması gerekir.
+- `lib/asset-path.ts` içindeki `getAssetPath(path)` fonksiyonu, verilen relatif yolu `NEXT_PUBLIC_BASE_PATH` ile birleştirir (örn. `NEXT_PUBLIC_BASE_PATH=/puan-merdiveni`).
+- Fonksiyon, `http://`, `https://` veya `//` ile başlayan tam URL'leri olduğu gibi döndürür; bu sayede uzak CDN/HTTP içerikleri bozulmaz.
+- Tüm bileşenler yerel görseller, ikonlar, ses dosyaları ve arka plan görselleri için `getAssetPath` ile normalize edilmiş yolları kullanmalıdır. Bu kullanım hem `<img>` hem de `next/image` ve inline `backgroundImage` stillerinde uygulanır.
+- Ses dosyaları da aynı fonksiyon üzerinden bağlanır; `AudioProvider` tüm kaynakları `getAssetPath` ile tanımlar.
+- `next.config.mjs`, build sırasında aynı ortam değişkenini okuyarak `basePath`, `assetPrefix` ve `trailingSlash` ayarlarını set eder; bu sayede `/_next/*` betikleri ve stilleri de alt dizine göre otomatik yönlendirilir.
 
 ### 7.3 True/False Cevap Kontrolü
 ```typescript
@@ -1397,7 +1406,22 @@ function determineWinner(teams: Team[], target: number): "A" | "B" | "tie" {
 
 ---
 
-## 11. SON GÜNCELLEMELER (04.01.2025)
+## 11. BUILD & DAĞITIM
+
+- Next.js `output: "export"` modunda çalışır; `pnpm build` komutu çalıştırıldığında otomatik olarak statik HTML çıktı üretir.
+- Build script'i, `NEXT_PUBLIC_BASE_PATH` tanımlı değilse otomatik olarak `/puan-merdiveni` değerini atar. Gerekirse aşağıdaki seçeneklerle değiştirilebilir:
+  - Farklı path: `NEXT_PUBLIC_BASE_PATH=/farkli-path pnpm build` veya `BUILD_BASE_PATH=/farkli-path pnpm build`
+  - Base path'siz paket: `DISABLE_BASE_PATH=true pnpm build`
+- Çıktı klasörü kökte `out/` olarak oluşur ve içinde `index.html` ile tüm sayfalar bulunur (merdiven ekranı vb. alt sayfalar static olarak erişilir).
+- Statik çıktıyı yerelde görüntülemek için:
+  - `pnpm build` → `out/` klasörü oluşur.
+  - `pnpm dlx serve out` komutu ile klasörü basit bir HTTP sunucusunda barındırabilirsiniz.
+- `output: "export"` nedeniyle `next start` kullanılmaz; dağıtım statik dosyaların herhangi bir CDN veya statik hosting hizmetine yüklenmesiyle yapılır.
+- `images.unoptimized = true` olduğu için tüm `<img>` etiketleri doğrudan `/public` altındaki varlıklara referans verir; ek optimize aşaması gerekmiyor.
+
+---
+
+## 12. SON GÜNCELLEMELER (04.01.2025)
 
 ### Merdiven Animasyon Sistemi
 

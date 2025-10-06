@@ -5,6 +5,7 @@ import type { GameState } from "@/types/game"
 import { determineWinner, determineFinalWinner } from "@/lib/game-utils"
 import { useAudio } from "@/components/AudioProvider"
 import AudioControls from "@/components/AudioControls"
+import { getAssetPath } from "@/lib/asset-path"
 
 interface GameResultsProps {
   gameState: GameState
@@ -47,7 +48,7 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
       <div
         className="absolute inset-0 w-full h-full"
         style={{
-          backgroundImage: "url(/assets/background.png)",
+          backgroundImage: `url(${getAssetPath("/assets/background.png")})`,
           backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
@@ -89,7 +90,7 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
         {/* Top - Game Over Banner - Büyütülmüş */}
         <div className="relative flex-shrink-0">
           <img 
-            src="/golden-banner.png" 
+            src={getAssetPath("/golden-banner.png")} 
             alt="Game Over" 
             className="h-20 w-auto object-contain drop-shadow-2xl" 
             style={{ maxWidth: "500px" }}
@@ -106,7 +107,7 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
           <div className="flex-1 flex items-center justify-center">
             <div className="relative w-full max-w-xl">
               <img 
-                src="/assets/soru-arkasi.png" 
+                src={getAssetPath("/assets/soru-arkasi.png")} 
                 alt="Winner Panel" 
                 className="w-full h-auto object-contain drop-shadow-2xl" 
                 style={{ maxHeight: "480px" }} 
@@ -127,7 +128,7 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
                         {/* Takım A */}
                         <div className="flex flex-col items-center">
                           <img
-                            src={teamA?.character?.image || "/assets/hero-1.png"}
+                            src={getAssetPath(teamA?.character?.image || "/assets/hero-1.png")}
                             alt="Team A"
                             className="w-32 h-32 object-contain mb-3"
                           />
@@ -142,7 +143,7 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
                         {/* Takım B */}
                         <div className="flex flex-col items-center">
                           <img
-                            src={teamB?.character?.image || "/assets/hero-2.png"}
+                            src={getAssetPath(teamB?.character?.image || "/assets/hero-2.png")}
                             alt="Team B"
                             className="w-32 h-32 object-contain mb-3"
                           />
@@ -177,7 +178,7 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
                                   }}
                                 ></div>
                                 <img
-                                  src={loser.character?.image || "/assets/hero-1.png"}
+                                  src={getAssetPath(loser.character?.image || "/assets/hero-1.png")}
                                   alt="2nd Place"
                                   className="w-14 h-14 object-contain relative z-10"
                                 />
@@ -206,7 +207,7 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
                               }}
                             ></div>
                             <img
-                              src={winner.character?.image || "/assets/hero-2.png"}
+                              src={getAssetPath(winner.character?.image || "/assets/hero-2.png")}
                               alt="Winner"
                               className="w-24 h-24 object-contain relative z-10"
                               style={{ animation: "pulse 2s ease-in-out infinite" }}
@@ -240,7 +241,7 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
           <div className="flex-1 flex items-center justify-center">
             <div className="relative w-full max-w-lg">
               <img 
-                src="/score-scroll.png" 
+                src={getAssetPath("/score-scroll.png")} 
                 alt="Final Scores" 
                 className="w-full h-auto object-contain drop-shadow-2xl" 
                 style={{ maxHeight: "580px" }}
@@ -264,8 +265,8 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
                         <div className="flex items-center gap-2">
                           {index === 0 && !isTie && <span className="text-yellow-500 text-lg w-6">👑</span>}
                           {(index !== 0 || isTie) && <span className="w-6"></span>}
-                          <img
-                            src={team.character?.image || "/assets/hero-2.png"}
+                            <img
+                              src={getAssetPath(team.character?.image || "/assets/hero-2.png")}
                             alt={`Team ${team.id}`}
                             className="w-10 h-10 rounded-full border-2 border-white/50"
                           />
@@ -293,7 +294,7 @@ export default function GameResults({ gameState, onPlayAgain }: GameResultsProps
         <div className="flex-shrink-0 flex justify-center">
           <button onClick={onPlayAgain} className="relative group transition-transform hover:scale-105 active:scale-95">
             <img 
-              src="/assets/genel-buton.png" 
+              src={getAssetPath("/assets/genel-buton.png")} 
               alt="Play Again" 
               className="h-14 w-auto object-contain drop-shadow-xl" 
               style={{ minWidth: "220px" }} 

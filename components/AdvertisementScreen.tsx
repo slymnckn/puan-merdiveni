@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import type { Advertisement } from "@/types/api"
+import { getAssetPath } from "@/lib/asset-path"
 
 interface AdvertisementScreenProps {
   advertisement: Advertisement
@@ -58,7 +59,7 @@ export default function AdvertisementScreen({
           onError={(e) => {
             // Fallback if image fails to load
             const target = e.target as HTMLImageElement
-            target.src = "/placeholder.svg"
+            target.src = getAssetPath("/placeholder.svg")
           }}
         />
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import type { GameState, SurpriseChoice } from "@/types/game"
 import { useAudio } from "@/components/AudioProvider"
+import { getAssetPath } from "@/lib/asset-path"
 
 interface SurpriseEventProps {
   gameState: GameState
@@ -75,7 +76,7 @@ export default function SurpriseEvent({ gameState, onSurpriseComplete }: Surpris
       <div
         className="absolute inset-0 w-full h-full"
         style={{
-          backgroundImage: "url(/assets/background.png)",
+          backgroundImage: `url(${getAssetPath("/assets/background.png")})`,
           backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
@@ -88,7 +89,7 @@ export default function SurpriseEvent({ gameState, onSurpriseComplete }: Surpris
         <div className="w-full flex flex-col items-center gap-4 flex-shrink-0">
           <div className="relative">
             <img 
-              src="/golden-banner.png" 
+              src={getAssetPath("/golden-banner.png")} 
               alt="Surprise Title" 
               className="h-16 w-auto object-contain drop-shadow-xl max-w-[350px]" 
             />
@@ -137,7 +138,7 @@ export default function SurpriseEvent({ gameState, onSurpriseComplete }: Surpris
                     className="relative group transition-all hover:scale-[1.02] active:scale-95 w-full"
                   >
                     <img 
-                      src="/assets/genel-buton.png" 
+                      src={getAssetPath("/assets/genel-buton.png")} 
                       alt="Choice Button" 
                       className="w-full h-auto object-contain drop-shadow-lg" 
                       style={{ height: '100px' }}
@@ -159,14 +160,14 @@ export default function SurpriseEvent({ gameState, onSurpriseComplete }: Surpris
         <div className="w-full flex justify-center items-center gap-6 flex-shrink-0 mt-4">
           <div className="relative">
             <img 
-              src="/assets/genel-buton.png" 
+              src={getAssetPath("/assets/genel-buton.png")} 
               alt="Team A" 
               className="h-16 w-auto object-contain drop-shadow-lg" 
               style={{ minWidth: '200px' }}
             />
             <div className="absolute inset-0 flex items-center justify-center gap-3 px-4">
               <img
-                src={gameState.teams[0].character?.image || "/assets/hero-2.png"}
+                src={getAssetPath(gameState.teams[0].character?.image || "/assets/hero-2.png")}
                 alt="Team A"
                 className="h-10 w-10 rounded-full border-2 border-blue-400"
               />
@@ -178,14 +179,14 @@ export default function SurpriseEvent({ gameState, onSurpriseComplete }: Surpris
 
           <div className="relative">
             <img 
-              src="/assets/genel-buton.png" 
+              src={getAssetPath("/assets/genel-buton.png")} 
               alt="Team B" 
               className="h-16 w-auto object-contain drop-shadow-lg" 
               style={{ minWidth: '200px' }}
             />
             <div className="absolute inset-0 flex items-center justify-center gap-3 px-4">
               <img
-                src={gameState.teams[1].character?.image || "/assets/hero-1.png"}
+                src={getAssetPath(gameState.teams[1].character?.image || "/assets/hero-1.png")}
                 alt="Team B"
                 className="h-10 w-10 rounded-full border-2 border-pink-400"
               />

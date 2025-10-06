@@ -12,6 +12,7 @@ import SurpriseEvent from "@/components/SurpriseEvent"
 import GameResults from "@/components/GameResults"
 import AdvertisementScreen from "@/components/AdvertisementScreen"
 import AudioControls from "@/components/AudioControls"
+import { getAssetPath } from "@/lib/asset-path"
 import { apiService } from "@/lib/api-service"
 import { 
   getLadderTarget, 
@@ -20,9 +21,49 @@ import {
   convertGameQuestionToQuestion,
   evaluateSurpriseTrigger
 } from "@/lib/game-utils"
-import { questions } from "@/data/questions"
 import { placeholderQuestions } from "@/data/placeholder-questions"
 import { useAudio } from "@/components/AudioProvider"
+
+const QUESTION_SOURCE_PARAM_KEYS = ["questionsUrl", "questionUrl", "questions_url", "question_url", "questionSource", "question_source"]
+const GAME_CODE_PARAM_KEYS = ["gameCode", "game_code", "code"]
+const API_BASE_PARAM_KEYS = ["apiBaseUrl", "api_base_url", "apiBase", "api_base", "api"]
+
+const getFirstParamValue = (params: URLSearchParams, keys: string[]) => {
+  for (const key of keys) {
+    const value = params.get(key)
+    if (value) {
+      return value
+    }
+  }
+  return null
+}
+
+const extractGameCode = (input: string | null | undefined): string | undefined => {
+  if (!input) return undefined
+  const value = input.trim()
+  if (!value) return undefined
+
+  const tryResolve = (target: string) => {
+    const segments = target.split("/").filter(Boolean)
+    for (let i = 0; i < segments.length; i++) {
+      if (segments[i - 1] === "code") {
+        return segments[i]
+      }
+    }
+    return segments[segments.length - 1]
+  }
+
+  try {
+    if (/^https?:\/\//i.test(value)) {
+      const url = new URL(value)
+      return tryResolve(url.pathname)
+    }
+  } catch {
+    // Ignore URL parsing errors and fallback to string parsing
+  }
+
+  return tryResolve(value)
+}
 
 export default function GameApp() {
   const { playMusic, stopMusic, playSfx } = useAudio()
@@ -119,33 +160,58 @@ export default function GameApp() {
   // Initialize game data on mount
   useEffect(() => {
     const initializeGame = async () => {
-      // Fetch advertisements first
-      const ads = await apiService.fetchAdvertisements()
-      setAdvertisements(ads)
-      
-      // Set initial screen based on whether we have ads
-      if (ads.length > 0) {
-        setGameState(prev => ({ 
-          ...prev, 
-          currentScreen: "advertisement",
-          advertisements: ads,
-          currentAdvertisement: ads[0],
-          advertisementTimeLeft: ads[0]?.duration_seconds || 0
-        }))
-      } else {
-        setGameState(prev => ({ 
-          ...prev, 
-          currentScreen: "main-menu"
-        }))
+      let questionSource = initialGameCodeRef.current || "default"
+
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search)
+        const baseUrlParam = getFirstParamValue(params, API_BASE_PARAM_KEYS)
+        const questionSourceParam = getFirstParamValue(params, QUESTION_SOURCE_PARAM_KEYS)
+        const gameCodeParam = getFirstParamValue(params, GAME_CODE_PARAM_KEYS)
+
+        if (baseUrlParam) {
+          apiService.setBaseUrl(decodeURIComponent(baseUrlParam))
+        }
+
+        const providedSource = questionSourceParam ?? gameCodeParam
+
+        if (providedSource) {
+          questionSource = decodeURIComponent(providedSource)
+          initialGameCodeRef.current = questionSource
+        }
       }
-      
-      // Fetch questions (can be done in parallel)
-  const questions = await apiService.fetchQuestions(initialGameCodeRef.current || 'default')
-      console.log('Loaded questions:', questions.length)
-      setGameQuestions(questions)
+
+      if (!initialGameCodeRef.current) {
+        initialGameCodeRef.current = questionSource
+      }
+
+      const resolvedGameCode = extractGameCode(initialGameCodeRef.current) ?? "default"
+
+      const [ads, fetchedQuestions] = await Promise.all([
+        apiService.fetchAdvertisements(),
+        apiService.fetchQuestions(initialGameCodeRef.current || "default")
+      ])
+
+      setAdvertisements(ads)
+      setGameQuestions(fetchedQuestions)
+
+      setGameState((prev) => ({
+        ...prev,
+        currentScreen: ads.length > 0 ? "advertisement" : "main-menu",
+        advertisements: ads,
+        currentAdvertisement: ads[0] ?? null,
+        advertisementTimeLeft: ads[0]?.duration_seconds ?? 0,
+        settings: {
+          ...prev.settings,
+          gameCode: resolvedGameCode
+        }
+      }))
+
+      console.log("Loaded questions:", fetchedQuestions.length, "source:", initialGameCodeRef.current)
     }
-    
-    initializeGame()
+
+    initializeGame().catch((error) => {
+      console.error("Failed to initialize game:", error)
+    })
   }, [])
 
   // Log when gameQuestions changes for debugging
@@ -341,7 +407,7 @@ export default function GameApp() {
           surpriseTracker: surpriseDecision.tracker
         }))
       } else {
-        const questionsToUse = gameQuestions.length > 0 ? gameQuestions : questions
+  const questionsToUse = gameQuestions.length > 0 ? gameQuestions : placeholderQuestions
         const nextQuestionIndex = gameState.currentQuestion // currentQuestion is already the next index
         const rawQuestion = questionsToUse[nextQuestionIndex]
         
@@ -402,7 +468,7 @@ export default function GameApp() {
       }
       
       // Continue game - load next question
-      const questionsToUse = gameQuestions.length > 0 ? gameQuestions : questions
+  const questionsToUse = gameQuestions.length > 0 ? gameQuestions : placeholderQuestions
       const nextQuestionIndex = prev.currentQuestion
       const rawQuestion = questionsToUse[nextQuestionIndex]
       
@@ -431,7 +497,7 @@ export default function GameApp() {
   }
 
   const handlePlayAgain = () => {
-    setGameState({
+    setGameState((prev) => ({
       currentScreen: "main-menu",
       teams: [
         { id: "A", name: "TAKIM A", character: null, score: 0, ladderPosition: 0 },
@@ -441,6 +507,7 @@ export default function GameApp() {
         questionCount: 20,
         gameMode: "timed",
         surpriseSystem: true,
+        gameCode: prev.settings.gameCode,
       },
       currentQuestion: 1,
       totalQuestions: 20,
@@ -462,7 +529,7 @@ export default function GameApp() {
       advertisements: [],
       currentAdvertisement: null,
       advertisementTimeLeft: 0,
-    })
+    }))
   }
 
   // Timer countdown for question screen
@@ -539,13 +606,29 @@ export default function GameApp() {
     case "game-results":
       return <GameResults gameState={gameState} onPlayAgain={handlePlayAgain} />
 
-    case "question-active":
+    case "question-active": {
+      const backgroundImage = getAssetPath("/assets/background.png")
+      const questionCounterBanner = getAssetPath("/assets/soru-sayac-banneri.png")
+      const timerAsset = getAssetPath("/assets/sure.png")
+      const questionCardAsset = getAssetPath("/assets/soru-arkasi.png")
+      const defaultButtonAsset = getAssetPath("/assets/genel-buton.png")
+      const correctButtonAsset = getAssetPath("/assets/correct-button.png")
+      const wrongButtonAsset = getAssetPath("/assets/wrong-button.png")
+      const continueButtonAsset = getAssetPath("/assets/devam-et.png")
+      const teamAButtonAsset = gameState.currentTurn === "A" ? correctButtonAsset : defaultButtonAsset
+      const teamBButtonAsset = gameState.currentTurn === "B" ? correctButtonAsset : defaultButtonAsset
+      const teamACharacterAsset = getAssetPath(gameState.teams[0].character?.image || "/assets/hero-2.png")
+      const teamBCharacterAsset = getAssetPath(gameState.teams[1].character?.image || "/assets/hero-1.png")
+      const questionImageAsset = gameState.currentQuestionData?.image_url
+        ? getAssetPath(gameState.currentQuestionData.image_url)
+        : null
+
       return (
         <div className="fixed inset-0 w-screen h-screen overflow-hidden">
           <div
             className="absolute inset-0 w-full h-full"
             style={{
-              backgroundImage: "url(/assets/background.png)",
+              backgroundImage: `url(${backgroundImage})`,
               backgroundSize: "cover",
               backgroundRepeat: "no-repeat",
               backgroundPosition: "center",
@@ -557,7 +640,7 @@ export default function GameApp() {
             <div className="absolute top-0 left-0 right-0 flex items-start justify-between w-full pl-8 pr-16 md:pr-20 pt-6 z-20">
               {/* Question Counter Banner */}
               <div className="relative">
-                <img src="/assets/soru-sayac-banneri.png" alt="Question Banner" className="h-16 w-auto" />
+                <img src={questionCounterBanner} alt="Question Banner" className="h-16 w-auto" />
                 <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '-15px' }}>
                   <span className="text-amber-900 font-bold text-lg drop-shadow-sm">
                     Soru {gameState.currentQuestion}/{gameState.settings.questionCount}
@@ -568,7 +651,7 @@ export default function GameApp() {
               {/* Timer */}
               <div className="flex flex-col items-end gap-2">
                 <div className="relative">
-                  <img src="/assets/sure.png" alt="Timer" className="h-14 w-auto" />
+                  <img src={timerAsset} alt="Timer" className="h-14 w-auto" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-amber-900 font-bold text-xl drop-shadow-sm">
                       Süre: {gameState.settings.gameMode === "timed" ? gameState.timeLeft : "---"}
@@ -584,13 +667,13 @@ export default function GameApp() {
               {/* Team A */}
               <div className={`relative ${gameState.currentTurn === 'A' ? 'animate-gentle-bounce' : ''}`}>
                 <img 
-                  src={gameState.currentTurn === 'A' ? "/assets/correct-button.png" : "/assets/genel-buton.png"} 
+                  src={teamAButtonAsset} 
                   alt="Team A Score" 
                   className={`h-20 w-auto min-w-[200px] transition-all ${gameState.currentTurn === 'A' ? 'drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]' : ''}`}
                 />
                 <div className="absolute inset-0 flex items-center justify-center gap-2">
                   <img
-                    src={gameState.teams[0].character?.image || "/assets/hero-2.png"}
+                    src={teamACharacterAsset}
                     alt="Team A Character"
                     className="h-10 w-10"
                   />
@@ -604,13 +687,13 @@ export default function GameApp() {
               {/* Team B */}
               <div className={`relative ${gameState.currentTurn === 'B' ? 'animate-gentle-bounce' : ''}`}>
                 <img 
-                  src={gameState.currentTurn === 'B' ? "/assets/correct-button.png" : "/assets/genel-buton.png"} 
+                  src={teamBButtonAsset} 
                   alt="Team B Score" 
                   className={`h-20 w-auto min-w-[200px] transition-all ${gameState.currentTurn === 'B' ? 'drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]' : ''}`}
                 />
                 <div className="absolute inset-0 flex items-center justify-center gap-2">
                   <img
-                    src={gameState.teams[1].character?.image || "/assets/hero-1.png"}
+                    src={teamBCharacterAsset}
                     alt="Team B Character"
                     className="h-10 w-10"
                   />
@@ -625,7 +708,7 @@ export default function GameApp() {
             {/* Soru Banner - Büyütülmüş ve merkezde */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-[52%] -translate-y-1/2 w-full max-w-7xl px-4" style={{ paddingLeft: '260px', paddingRight: '160px' }}>
               <div className="relative w-full">
-                <img src="/assets/soru-arkasi.png" alt="Question Background" className="w-full h-auto" style={{ transform: 'scale(1.15)' }} />
+                <img src={questionCardAsset} alt="Question Background" className="w-full h-auto" style={{ transform: 'scale(1.15)' }} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-10" style={{ paddingTop: '75px' }}>
                   {gameState.currentQuestionData && (
                     <div className="w-full">
@@ -636,7 +719,7 @@ export default function GameApp() {
                           <div className="flex-shrink-0" style={{ marginLeft: '-30px', marginTop: '20px' }}>
                             <div className="bg-white p-3 rounded-lg shadow-lg" style={{ width: '220px' }}>
                               <img
-                                src={gameState.currentQuestionData.image_url}
+                                src={questionImageAsset ?? ""}
                                 alt="Soru görseli"
                                 className="w-full h-auto rounded"
                                 style={{ maxHeight: '220px', objectFit: 'contain' }}
@@ -657,19 +740,19 @@ export default function GameApp() {
                             const key = option === "true" ? "A" : "B"
                             const text = option === "true" ? "Doğru" : "Yanlış"
                             
-                            let buttonImage = "/assets/genel-buton.png"
+                            let buttonImage = defaultButtonAsset
                             
                             if (gameState.answerResult && gameState.selectedAnswer) {
                               // Seçilen buton
                               if (key === gameState.selectedAnswer) {
-                                buttonImage = gameState.answerResult === "correct" ? "/assets/correct-button.png" : "/assets/wrong-button.png"
+                                buttonImage = gameState.answerResult === "correct" ? correctButtonAsset : wrongButtonAsset
                               } 
                               // Doğru cevabı göster (yanlış seçildiğinde)
                               else if (gameState.answerResult === "wrong") {
                                 // correctAnswer "true" veya "false" string olarak geliyor
                                 const correctKey = gameState.correctAnswer === "true" ? "A" : "B"
                                 if (key === correctKey) {
-                                  buttonImage = "/assets/correct-button.png"
+                                  buttonImage = correctButtonAsset
                                 }
                               }
                             }
@@ -706,7 +789,7 @@ export default function GameApp() {
                               }}
                               className="relative group transition-transform hover:scale-105 cursor-pointer"
                             >
-                              <img src="/assets/genel-buton.png" alt="Show Answer Button" className="w-64 h-auto" />
+                              <img src={defaultButtonAsset} alt="Show Answer Button" className="w-64 h-auto" />
                               <div className="absolute inset-0 flex items-center justify-center">
                                 <span className="text-white font-bold text-xl drop-shadow-lg">
                                   Cevabı Göster
@@ -731,7 +814,7 @@ export default function GameApp() {
                                     onClick={() => handleAnswerClick("correct")}
                                     className="relative group transition-transform hover:scale-105 cursor-pointer"
                                   >
-                                    <img src="/assets/correct-button.png" alt="Correct Button" className="w-full h-auto" />
+                                    <img src={correctButtonAsset} alt="Correct Button" className="w-full h-auto" />
                                     <div className="absolute inset-0 flex items-center justify-center">
                                       <span className="text-white font-bold text-xl drop-shadow-lg">
                                         ✅ Doğru Bildi
@@ -743,7 +826,7 @@ export default function GameApp() {
                                     onClick={() => handleAnswerClick("wrong")}
                                     className="relative group transition-transform hover:scale-105 cursor-pointer"
                                   >
-                                    <img src="/assets/wrong-button.png" alt="Wrong Button" className="w-full h-auto" />
+                                    <img src={wrongButtonAsset} alt="Wrong Button" className="w-full h-auto" />
                                     <div className="absolute inset-0 flex items-center justify-center">
                                       <span className="text-white font-bold text-xl drop-shadow-lg">
                                         ❌ Yanlış Bildi
@@ -760,13 +843,13 @@ export default function GameApp() {
                           {gameState.currentQuestionData.options && Object.entries(gameState.currentQuestionData.options).map(([key, text]) => {
                             if (!text) return null
                             
-                            let buttonImage = "/assets/genel-buton.png"
+                            let buttonImage = defaultButtonAsset
                             
                             if (gameState.answerResult && gameState.selectedAnswer) {
                               if (key === gameState.selectedAnswer) {
-                                buttonImage = gameState.answerResult === "correct" ? "/assets/correct-button.png" : "/assets/wrong-button.png"
+                                buttonImage = gameState.answerResult === "correct" ? correctButtonAsset : wrongButtonAsset
                               } else if (key === gameState.correctAnswer && gameState.answerResult === "wrong") {
-                                buttonImage = "/assets/correct-button.png"
+                                buttonImage = correctButtonAsset
                               }
                             }
 
@@ -805,15 +888,15 @@ export default function GameApp() {
                                 const key = option === "true" ? "A" : "B"
                                 const text = option === "true" ? "Doğru" : "Yanlış"
                                 
-                                let buttonImage = "/assets/genel-buton.png"
+                                let buttonImage = defaultButtonAsset
                                 
                                 if (gameState.answerResult && gameState.selectedAnswer) {
                                   if (key === gameState.selectedAnswer) {
-                                    buttonImage = gameState.answerResult === "correct" ? "/assets/correct-button.png" : "/assets/wrong-button.png"
+                                    buttonImage = gameState.answerResult === "correct" ? correctButtonAsset : wrongButtonAsset
                                   } else if (gameState.answerResult === "wrong") {
                                     const correctKey = gameState.correctAnswer === "true" ? "A" : "B"
                                     if (key === correctKey) {
-                                      buttonImage = "/assets/correct-button.png"
+                                      buttonImage = correctButtonAsset
                                     }
                                   }
                                 }
@@ -849,7 +932,7 @@ export default function GameApp() {
                                   }}
                                   className="relative group transition-transform hover:scale-105 cursor-pointer"
                                 >
-                                  <img src="/assets/genel-buton.png" alt="Show Answer Button" className="w-64 h-auto" />
+                                  <img src={defaultButtonAsset} alt="Show Answer Button" className="w-64 h-auto" />
                                   <div className="absolute inset-0 flex items-center justify-center">
                                     <span className="text-white font-bold text-xl drop-shadow-lg">
                                       Cevabı Göster
@@ -871,7 +954,7 @@ export default function GameApp() {
                                         onClick={() => handleAnswerClick("correct")}
                                         className="relative group transition-transform hover:scale-105 cursor-pointer"
                                       >
-                                        <img src="/assets/correct-button.png" alt="Correct Button" className="w-full h-auto" />
+                                        <img src={correctButtonAsset} alt="Correct Button" className="w-full h-auto" />
                                         <div className="absolute inset-0 flex items-center justify-center">
                                           <span className="text-white font-bold text-xl drop-shadow-lg">
                                             ✅ Doğru Bildi
@@ -883,7 +966,7 @@ export default function GameApp() {
                                         onClick={() => handleAnswerClick("wrong")}
                                         className="relative group transition-transform hover:scale-105 cursor-pointer"
                                       >
-                                        <img src="/assets/wrong-button.png" alt="Wrong Button" className="w-full h-auto" />
+                                        <img src={wrongButtonAsset} alt="Wrong Button" className="w-full h-auto" />
                                         <div className="absolute inset-0 flex items-center justify-center">
                                           <span className="text-white font-bold text-xl drop-shadow-lg">
                                             ❌ Yanlış Bildi
@@ -900,13 +983,13 @@ export default function GameApp() {
                               {gameState.currentQuestionData.options && Object.entries(gameState.currentQuestionData.options).map(([key, text]) => {
                                 if (!text) return null
                                 
-                                let buttonImage = "/assets/genel-buton.png"
+                                let buttonImage = defaultButtonAsset
                                 
                                 if (gameState.answerResult && gameState.selectedAnswer) {
                                   if (key === gameState.selectedAnswer) {
-                                    buttonImage = gameState.answerResult === "correct" ? "/assets/correct-button.png" : "/assets/wrong-button.png"
+                                    buttonImage = gameState.answerResult === "correct" ? correctButtonAsset : wrongButtonAsset
                                   } else if (key === gameState.correctAnswer && gameState.answerResult === "wrong") {
-                                    buttonImage = "/assets/correct-button.png"
+                                    buttonImage = correctButtonAsset
                                   }
                                 }
 
@@ -946,7 +1029,7 @@ export default function GameApp() {
                   className="relative group transition-transform hover:scale-110 cursor-pointer"
                 >
                   <img 
-                    src="/assets/devam-et.png" 
+                    src={continueButtonAsset} 
                     alt="Devam Et" 
                     className="h-50 w-auto object-contain drop-shadow-2xl" 
                   />
@@ -962,6 +1045,7 @@ export default function GameApp() {
         </div>
       )
 
+    }
     case "advertisement":
       if (gameState.currentAdvertisement) {
         return (

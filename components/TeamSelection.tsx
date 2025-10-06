@@ -4,6 +4,7 @@ import { useState } from "react"
 import { characters } from "@/data/characters"
 import type { Team, Character } from "@/types/game"
 import AudioControls from "@/components/AudioControls"
+import { getAssetPath } from "@/lib/asset-path"
 
 interface TeamSelectionProps {
   teams: Team[]
@@ -33,7 +34,7 @@ export default function TeamSelection({ teams, onTeamsUpdate, onContinue }: Team
       <div
         className="absolute inset-0 w-full h-full"
         style={{
-          backgroundImage: "url(/assets/background.png)",
+          backgroundImage: `url(${getAssetPath("/assets/background.png")})`,
           backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
@@ -46,7 +47,7 @@ export default function TeamSelection({ teams, onTeamsUpdate, onContinue }: Team
         </div>
         {/* Title */}
         <div className="relative mb-6">
-          <img src="/assets/soru-sayac-banneri.png" alt="Team Selection Title" className="h-20 w-auto" />
+          <img src={getAssetPath("/assets/soru-sayac-banneri.png")} alt="Team Selection Title" className="h-20 w-auto" />
           <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '-12px' }}>
             <span className="text-amber-900 font-bold text-xl drop-shadow-sm">TAKIM & KARAKTER SEÇİMİ</span>
           </div>
@@ -56,11 +57,11 @@ export default function TeamSelection({ teams, onTeamsUpdate, onContinue }: Team
         <div className="flex gap-8 mb-6 max-w-7xl">
           {localTeams.map((team) => (
             <div key={team.id} className="relative flex-1">
-              <img src="/assets/soru-arkasi.png" alt={`Team ${team.id} Panel`} className="w-full h-auto scale-105" />
+              <img src={getAssetPath("/assets/soru-arkasi.png")} alt={`Team ${team.id} Panel`} className="w-full h-auto scale-105" />
               <div className="absolute inset-0 flex flex-col items-center px-8 pt-[80px] pb-[65px] scale-105">
                 {/* Team Name Input */}
                 <div className="relative mb-2 flex-shrink-0">
-                  <img src="/assets/genel-buton.png" alt="Name Input" className="h-8 w-38" />
+                  <img src={getAssetPath("/assets/genel-buton.png")} alt="Name Input" className="h-8 w-38" />
                   <input
                     type="text"
                     value={team.name}
@@ -89,7 +90,7 @@ export default function TeamSelection({ teams, onTeamsUpdate, onContinue }: Team
                           title={character.name}
                         >
                           <img
-                            src={character.image || "/placeholder.svg"}
+                            src={getAssetPath(character.image || "/placeholder.svg")}
                             alt={character.name}
                             className="w-full h-full object-contain p-1"
                           />
@@ -118,7 +119,7 @@ export default function TeamSelection({ teams, onTeamsUpdate, onContinue }: Team
             canContinue ? "hover:scale-105" : "opacity-50 cursor-not-allowed"
           }`}
         >
-          <img src="/assets/genel-buton.png" alt="Continue" className="h-14 w-auto min-w-[180px]" />
+          <img src={getAssetPath("/assets/genel-buton.png")} alt="Continue" className="h-14 w-auto min-w-[180px]" />
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-white font-bold text-base drop-shadow-lg">OYUNA BAŞLA</span>
           </div>

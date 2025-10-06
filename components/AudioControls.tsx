@@ -4,6 +4,7 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { useAudio } from "@/components/AudioProvider"
 import { useFullscreen } from "@/hooks/use-fullscreen"
+import { getAssetPath } from "@/lib/asset-path"
 
 type AudioControlsProps = {
   orientation?: "vertical" | "horizontal"
@@ -42,7 +43,7 @@ export default function AudioControls({
           className={cn(baseButtonStyles, sizeStyles)}
         >
           <Image
-            src={musicEnabled ? "/assets/music-on.png" : "/assets/music-off.png"}
+            src={getAssetPath(musicEnabled ? "/assets/music-on.png" : "/assets/music-off.png")}
             alt={musicEnabled ? "Müzik açık" : "Müzik kapalı"}
             width={iconSize}
             height={iconSize}
@@ -59,7 +60,7 @@ export default function AudioControls({
           className={cn(baseButtonStyles, sizeStyles)}
         >
           <Image
-            src={sfxEnabled ? "/assets/fx-on.png" : "/assets/fx-off.png"}
+            src={getAssetPath(sfxEnabled ? "/assets/fx-on.png" : "/assets/fx-off.png")}
             alt={sfxEnabled ? "Efektler açık" : "Efektler kapalı"}
             width={iconSize}
             height={iconSize}
@@ -78,7 +79,7 @@ export default function AudioControls({
           className={cn(baseButtonStyles, compact ? "p-1" : "p-2")}
         >
           <Image
-            src={isFullscreen ? "/assets/tam-ekran-off.png" : "/assets/tam-ekran-on.png"}
+            src={getAssetPath(isFullscreen ? "/assets/tam-ekran-off.png" : "/assets/tam-ekran-on.png")}
             alt={isFullscreen ? "Tam ekrandan çık" : "Tam ekrana geç"}
             width={iconSize}
             height={iconSize}
