@@ -22,6 +22,7 @@ class ApiService {
     retryLimit: 3,
     retryDelay: 1000
   }
+  private lastQuestionSource: 'remote' | 'fallback' = 'fallback'
 
   setBaseUrl(baseUrl?: string | null) {
     const sanitized = sanitizeBaseUrl(baseUrl)
@@ -102,14 +103,21 @@ class ApiService {
           code,
           payloadSummary: this.getPayloadSummary(payload)
         })
+        this.lastQuestionSource = 'fallback'
         return this.getFallbackQuestions()
       }
 
+      this.lastQuestionSource = 'remote'
       return this.convertQuestionsToGameFormat(apiQuestions)
     } catch (error) {
       console.error('Failed to fetch questions from API:', error)
+      this.lastQuestionSource = 'fallback'
       return this.getFallbackQuestions()
     }
+  }
+
+  getLastQuestionSource() {
+    return this.lastQuestionSource
   }
 
   private getPayloadSummary(payload: unknown) {

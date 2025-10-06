@@ -24,6 +24,7 @@ import {
 } from "@/lib/game-utils"
 import { placeholderQuestions } from "@/data/placeholder-questions"
 import { useAudio } from "@/components/AudioProvider"
+import { loadLocalQuestionPack } from "@/lib/local-question-pack"
 
 const QUESTION_SOURCE_PARAM_KEYS = ["questionsUrl", "questionUrl", "questions_url", "question_url", "questionSource", "question_source"]
 const GAME_CODE_PARAM_KEYS = ["gameCode", "game_code", "code"]
@@ -163,6 +164,7 @@ export default function GameApp() {
   useEffect(() => {
     const initializeGame = async () => {
       let questionSource = initialGameCodeRef.current || "default"
+      let providedSourceValue: string | null = null
 
       if (typeof window !== "undefined") {
         const params = new URLSearchParams(window.location.search)
@@ -174,10 +176,11 @@ export default function GameApp() {
           apiService.setBaseUrl(decodeURIComponent(baseUrlParam))
         }
 
-        const providedSource = questionSourceParam ?? gameCodeParam
+        const providedSourceParamValue = questionSourceParam ?? gameCodeParam
 
-        if (providedSource) {
-          questionSource = decodeURIComponent(providedSource)
+        if (providedSourceParamValue) {
+          providedSourceValue = decodeURIComponent(providedSourceParamValue)
+          questionSource = providedSourceValue
           initialGameCodeRef.current = questionSource
         }
       }
@@ -186,23 +189,47 @@ export default function GameApp() {
         initialGameCodeRef.current = questionSource
       }
 
-      const resolvedGameCode = extractGameCode(initialGameCodeRef.current) ?? "default"
+      const localPackPromise = loadLocalQuestionPack()
 
-      const [ads, fetchedQuestions] = await Promise.all([
+      const [ads, fetchedQuestions, localPack] = await Promise.all([
         apiService.fetchAdvertisements(),
-        apiService.fetchQuestions(initialGameCodeRef.current || "default")
+        apiService.fetchQuestions(initialGameCodeRef.current || "default"),
+        localPackPromise
       ])
 
-      setAdvertisements(ads)
-      setGameQuestions(fetchedQuestions)
+    const hasProvidedSource = typeof providedSourceValue === "string" && providedSourceValue.trim().length > 0
+      const hasLocalPack = !!localPack && localPack.questions.length > 0
+      const preferLocalPack = hasLocalPack && !hasProvidedSource
+      const apiReturnedFallback = apiService.getLastQuestionSource() === "fallback"
+      const fallbackToLocalPack = hasLocalPack && apiReturnedFallback
 
-      const initialPublisherQuestion = fetchedQuestions.find((question) => {
+      let resolvedQuestions = fetchedQuestions
+      let publisherLogoOverride: string | null = null
+      let usingLocalPack = false
+
+      if (preferLocalPack || fallbackToLocalPack) {
+        resolvedQuestions = localPack!.questions
+        publisherLogoOverride = localPack!.publisherLogo
+        usingLocalPack = true
+
+        if (!hasProvidedSource) {
+          questionSource = "local-pack"
+          initialGameCodeRef.current = "local-pack"
+        }
+      }
+
+      const resolvedGameCode = extractGameCode(initialGameCodeRef.current) ?? "default"
+
+      setAdvertisements(ads)
+      setGameQuestions(resolvedQuestions)
+
+      const initialPublisherQuestion = resolvedQuestions.find((question) => {
         const hasPublisher = typeof question.publisher_id === "number" && question.publisher_id > 0
         const hasLogo = typeof question.publisher_logo_url === "string" && question.publisher_logo_url.trim().length > 0
         return hasPublisher || hasLogo
       })
       const initialPublisherId = initialPublisherQuestion?.publisher_id ?? null
-      const initialPublisherLogo = initialPublisherQuestion?.publisher_logo_url?.trim() ?? null
+      const initialPublisherLogo = (publisherLogoOverride ?? initialPublisherQuestion?.publisher_logo_url)?.trim() ?? null
 
       setGameState((prev) => ({
         ...prev,
@@ -218,7 +245,7 @@ export default function GameApp() {
         publisherLogo: initialPublisherLogo ?? prev.publisherLogo ?? null
       }))
 
-      console.log("Loaded questions:", fetchedQuestions.length, "source:", initialGameCodeRef.current)
+      console.log("Loaded questions:", resolvedQuestions.length, "source:", usingLocalPack ? "local-pack" : initialGameCodeRef.current)
     }
 
     initializeGame().catch((error) => {
