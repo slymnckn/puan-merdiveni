@@ -206,6 +206,13 @@ User-Agent: WebGame/1.0
    - Üzerinde "OYUNA BAŞLA" metni
    - hover:scale-105 efekti
 
+3. **Ses & Fullscreen Paneli**
+  - Sağ üst köşede `AudioControls` bileşeni bulunur.
+  - Varsayılan dikey düzen: Önce müzik, sonra efekt butonu; altında tam ekran togglesı.
+  - İkonlar: `/assets/music-on.png` ↔ `/assets/music-off.png`, `/assets/fx-on.png` ↔ `/assets/fx-off.png`, `/assets/tam-ekran-on.png` ↔ `/assets/tam-ekran-off.png`.
+  - Hover: `scale-[1.05]`, tüm butonlar yuvarlak ve drop-shadow'lu.
+  - Tam ekran togglesı `use-fullscreen` hook'u ile body'yi tam ekrana alır, durum `isFullscreen` ile takip edilir.
+
 ---
 
 ### 4.3 TAKIM SEÇİMİ EKRANI
@@ -220,6 +227,12 @@ User-Agent: WebGame/1.0
    - h-20 w-auto
    - Üzerinde "TAKIM & KARAKTER SEÇİMİ" (text-amber-900, font-bold, text-xl)
    - marginTop: -12px (fine-tune positioning)
+
+- **Ses & Fullscreen Paneli**
+  - Sağ üstte sabitlenen `AudioControls` bileşeni.
+  - Dikey düzen: müzik ve efekt butonları üst üste, altında tam ekran togglesı.
+  - Panel `gap-2` ile dizilir, `AudioControls` default props kullanır (`showFullscreen=true`).
+  - Bu ekran tam ekran olmadan açıldığında tam ekran togglesı ile oyun sahnesi genişletilebilir.
 
 2. **Takım Panelleri (2 adet yan yana)**
    - Panel görseli: /assets/soru-arkasi.png
@@ -299,6 +312,11 @@ User-Agent: WebGame/1.0
    - Görsel: /assets/soru-sayac-banneri.png (h-18)
    - Üzerinde "OYUN AYARLARI"
 
+- **Ses & Fullscreen Paneli**
+  - Sağ üst köşede yer alır, `AudioControls` bileşeni default dikey düzenle kullanılır.
+  - `gap-2` ile butonlar ayrılır; müzik/sfx ikonları 52px, fullscreen togglesı 48px.
+  - `hover:scale-[1.05]` animasyonu ile kullanıcı geri bildirimi sağlar.
+
 2. **Ayarlar Paneli**
    - Panel görseli: /assets/soru-arkasi.png
    - max-w-3xl
@@ -339,25 +357,23 @@ User-Agent: WebGame/1.0
 - Background: /assets/background.png
 
 **Bileşenler:**
-1. **Üst Kısım**
-   - Publisher logo (opsiyonel)
-   - Soru sayacı banner: /assets/soru-sayac-banneri.png (h-16)
-   - Üzerinde "SORU X / Y" metni
+1. **Üst Bar**
+  - Absolute olarak ekranın üstünde `flex items-start justify-between` düzeninde yerleşir.
+  - Sol taraf: `/assets/soru-sayac-banneri.png` (h-16) üzerinde `Soru {current}/{questionCount}` metni, text-amber-900, font-bold, drop-shadow.
+  - Sağ taraf: `/assets/sure.png` (h-14) görseli, metin `---` (hazır ekranda süre çalışmaz).
+  - Timer panelinin hemen altında `AudioControls orientation="vertical"` yer alır; müzik/sfx butonları ve tam ekran togglesı üst üste dizilir.
+  - Panel `gap-2` ile ayrılır, `className="mt-1"` ile küçük boşluk bırakılır.
 
-2. **Orta Kısım**
-   - Büyük "SORUYU GÖSTER" butonu
-   - w-48 h-48 rounded-full gradient button
-   - animate-pulse efekti
+2. **Takım Banner Kolonu**
+  - Sol kenarda `absolute left-8 top-1/2 -translate-y-1/2` ile dikey olarak hizalanır, `gap-4` kullanır.
+  - Her takım için `/assets/correct-button.png` (aktif) veya `/assets/genel-buton.png` (pasif) gösterilir; aktif olanda `animate-gentle-bounce` ve yeşil glow (`drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]`).
+  - İçerik: Karakter görseli (h-10 w-10), takım adı (`TAKIM A/B`) ve mevcut basamak (`ladderPosition`).
 
-3. **Alt Kısım**
-   - Takım skorları ve aktif takım göstergesi
-   - **Aktif Takım İndikatörü:**
-     - Sırası gelen takım: /assets/correct-button.png (yeşil banner)
-     - Diğer takım: /assets/genel-buton.png (mor banner)
-     - Aktif takım: animate-gentle-bounce animasyonu
-     - Yeşil glow efekti: drop-shadow-[0_0_15px_rgba(34,197,94,0.7)]
-   - Her takım: h-20, min-w-[240px]
-   - Karakter görseli (w-10 h-10) + İsim + Skor
+3. **Merkez Panel**
+  - `absolute top-1/2 left-1/2` konumlu, `transform -translate-x-[52%] -translate-y-1/2` ile ortalanır.
+  - Arkaplan: `/assets/soru-arkasi.png`, `scale(1.15)` uygulaması.
+  - İçinde büyük "SORUYU GÖSTER" butonu: 48x48 px, dairesel, sarı→turuncu gradient, `animate-pulse` ve `animate-ping` efektleriyle çift katmanlı glow.
+  - Buton metni iki satır, text-white, font-bold, drop-shadow.
 
 ---
 
@@ -383,6 +399,7 @@ User-Agent: WebGame/1.0
        - Süresiz modda: "---" gösterilir
      - Font: text-amber-900, font-bold, text-xl, drop-shadow-sm
      - **ÖNEMLİ:** Cevap seçildiğinde süre DURUR
+    - Timer panelinin hemen altında `AudioControls orientation="vertical" className="mt-1"`; müzik/sfx butonları ve tam ekran togglesı üst üste dizilir.
 
 2. **Soru Alanı (Orta)**
    - Soru panel: /assets/soru-arkasi.png
@@ -476,14 +493,34 @@ User-Agent: WebGame/1.0
   - Window start = max(1, position - 3)
 
 **Basamak Boyutları:**
-- Width: 180px + (stepIndex * 8) [her basamak gittikçe genişler]
+- Width: 180px + (stepIndex * 8) → 180px başlangıç, her adımda +8px
 - Height: 45px (sabit)
-- Border-radius: 8px 24px 24px 8px (sol köşeler hafif, sağ köşeler yuvarlak)
-- Box-shadow: Aktif basamakta daha belirgin
-- Border: Aktif → 3px solid rgba(255,215,0,0.6), diğerleri → 2px solid rgba(255,255,255,0.3)
+- Border-radius: 12px 32px 32px 12px (sol köşeler hafif, sağ köşeler daha yuvarlak)
+- **Görsel:** `/steps/level-{n}.png` dosyaları doğrudan kullanılır, üzerine ek border/gradient uygulanmaz
+- Drop-shadow: Filtre ile uygulanır (aktif basamakta takım renginin light tonu, diğer durumlarda nötr siyah ton)
 - **Z-Index:** z-10 (Basamaklar arka planda, karakterlerin altında)
 
-**Renk Paletleri (Her 10 basamakta bir değişir):**
+**Basamak Görsel Eşleşmesi:**
+- 1–9 → `/steps/level-1.png`
+- 10–19 → `/steps/level-2.png`
+- 20–29 → `/steps/level-3.png`
+- 30–39 → `/steps/level-4.png`
+- 40–49 → `/steps/level-5.png`
+- 50+ → `/steps/level-6.png`
+- Her iki takım da aynı görselleri kullanır; fark sadece drop-shadow tonlarında yansır
+
+**Üst Katman Bileşenleri:**
+- **AudioControls:** `absolute top-4 right-4`, dikeyde `gap-2`, `z-30`; müzik ve efekt sesleri için toggle butonları içerir.
+- **Soru Sayacı Bannerı:** `absolute top-4 left-4 z-30`; görsel `/assets/soru-sayac-banneri.png`, boyut `h-14 md:h-16 lg:h-20`; metin `SORU X/Y` olarak merkezde `text-white font-bold`.
+- **Skor Parşömen Paneli:** `absolute bottom-32 md:bottom-36 left-1/2 -translate-x-1/2 z-30`; görsel `/score-scroll.png`, genişlik `w-72 md:w-80 lg:w-96`. İçeride:
+  - Başlık "SKOR" (`text-amber-900`, `text-base md:text-lg lg:text-xl`).
+  - Takımlar liderlik durumuna göre sıralanır; lider takım satırında 👑 emojisi görünür.
+  - Satır stili: `flex items-center justify-between gap-2 bg-white/10 rounded-lg px-2 py-1`, takım avatarı `w-8 h-8` dairesel çerçeveyle gösterilir.
+  - Alt kısımda hedef gösterimi: `🎯 HEDEF: {ladderTarget}` metni (`text-amber-900 font-bold text-xs md:text-sm`).
+- **Tebrik Bannerı:** Doğru cevapta görünür, `absolute top-4 md:top-6 left-1/2 -translate-x-1/2 z-40`; görsel `/golden-banner.png`, genişlik `w-80 md:w-96 lg:w-[28rem]`; metin `TEBRİKLER! +{stepsGained} BASAMAK KAZANDINIZ!`.
+- **Devam Et Butonu:** `absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-50`; görsel `/assets/genel-buton.png` (`w-40 md:w-48 lg:w-56`); hover'da `scale-110` ve `brightness-110`, aktif durumda `scale-95`; metin "SONRAKI SORU".
+
+**Renk Paletleri (Her 10 basamakta bir değişir):** _(Drop-shadow ve glow tonları için kullanılır)_
 
 **Takım A:**
 1. Mor (1-10): #5B21B6 → #8B5CF6
@@ -725,6 +762,7 @@ Seçenekler:
 - Fixed inset-0, h-screen, w-screen
 - Background: /assets/background.png
 - Confetti animasyonu (40 parça, farklı renkler, sürekli düşüş) - SADECE kazanan durumunda
+- Sağ üst köşede `AudioControls` (dikey düzen, confetti üstünde z-30) müzik/efekt/fullscreen kontrolü sağlar.
 
 **Bileşenler:**
 
@@ -1016,6 +1054,8 @@ Cevap doğruysa:
 
 /components
   AdvertisementScreen.tsx  # Reklam ekranı
+  AudioControls.tsx        # Müzik/SFX toggle + fullscreen kontrol paneli
+  AudioProvider.tsx        # Ses context'i, müzik ve efekt state yönetimi
   MainMenu.tsx             # Ana menü
   TeamSelection.tsx        # Takım ve karakter seçimi
   GameSettings.tsx         # Oyun ayarları
@@ -1054,10 +1094,33 @@ Cevap doğruysa:
     selected-süre.png
     süreli-süresiz-butonu.png
     sure.png
-    step.png
+    music-on.png
+    music-off.png
+    fx-on.png
+    fx-off.png
+    tam-ekran-on.png
+    tam-ekran-off.png
+    fullscreen-enter.svg
+    fullscreen-exit.svg
+    step-1.png
+    step-2.png
     /characters
       (6 karakter görseli)
+    /audio
+      fx/
+      music/
+    /hero
+      ...
 
+  /steps
+    level-1.png
+    level-2.png
+    level-3.png
+    level-4.png
+    level-5.png
+    level-6.png
+  giris-ekrani.png
+  score-scroll.png
   golden-banner.png
   placeholder-logo.png
 
@@ -1220,6 +1283,18 @@ function determineWinner(teams: Team[], target: number): "A" | "B" | "tie" {
 ### 8.5 Responsive (Opsiyonel)
 - Birincil hedef: Desktop (1920x1080)
 - İkincil hedef: Tablet landscape (1024x768)
+
+### 8.6 Ses & Fullscreen Kontrolleri
+- `AudioControls` bileşeni tüm ana ekranların sağ üstünde görünür (Ana Menü, Takım Seçimi, Oyun Ayarları, Soru Hazır, Soru Aktif, Merdiven, Oyun Sonu).
+- Varsayılan düzen dikeydir; müzik ve efekt butonları üst üste, tam ekran togglesı en altta yer alır.
+- Butonlar yuvarlak, şeffaf arka planlı, `hover:scale-[1.05]` ile büyür, `drop-shadow-md` ile ayrışır.
+- İkonlar:
+  - Müzik: `/assets/music-on.png` ↔ `/assets/music-off.png`
+  - Efekt: `/assets/fx-on.png` ↔ `/assets/fx-off.png`
+  - Tam ekran: `/assets/tam-ekran-on.png` ↔ `/assets/tam-ekran-off.png`
+- `compact` prop'u ikonları 40px boyutuna indirger (şu an kullanılmıyor, ileride mobilde kullanılabilir).
+- `showFullscreen` prop'u tam ekran togglesını isteğe göre gizler (varsayılan: true).
+- `use-fullscreen` hook'u ile `<body>` hedef alınır; `isFullscreen` state'i ikon ve ARIA etiketlerini günceller.
 - Mobil: Desteklenmeyebilir (oyun karmaşık)
 
 ---
@@ -1440,6 +1515,23 @@ useEffect(() => {
  character.id === 'uzay-kasifi' || character.id === 'zeka-ustasi')
   ? `/hero/animation/${character.id}/${jumpFrame}.png`
   : character.image
+
+// Basamak görseli seçimi (ortak kullanım)
+const getStepAsset = (stepValue: number) => {
+  if (stepValue >= 50) return "/steps/level-6.png"
+  if (stepValue >= 40) return "/steps/level-5.png"
+  if (stepValue >= 30) return "/steps/level-4.png"
+  if (stepValue >= 20) return "/steps/level-3.png"
+  if (stepValue >= 10) return "/steps/level-2.png"
+  return "/steps/level-1.png"
+}
+
+const stepImageSrc = getStepAsset(stepValue)
+const stepImageFilter = isActiveStep
+  ? `brightness(1.1) drop-shadow(0 12px 22px ${lightColor}66)`
+  : isPassed
+    ? 'brightness(0.95) drop-shadow(0 8px 16px rgba(0,0,0,0.35))'
+    : 'brightness(0.85) drop-shadow(0 6px 12px rgba(0,0,0,0.25))'
 ```
 
 #### GameResults.tsx

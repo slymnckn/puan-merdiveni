@@ -135,7 +135,13 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
       A: [
         // Tier 0 (1-10): Mor
         { base: "#5B21B6", light: "#8B5CF6", name: "Mor" },
-        // Tier 4 (41-50): Sarı-Yeşil
+        // Tier 1 (11-20): Mavi
+        { base: "#1E40AF", light: "#3B82F6", name: "Mavi" },
+        // Tier 2 (21-30): Turkuaz
+        { base: "#0F766E", light: "#14B8A6", name: "Turkuaz" },
+        // Tier 3 (31-40): Yeşil
+        { base: "#15803D", light: "#22C55E", name: "Yeşil" },
+        // Tier 4 (41-50): Sarı
         { base: "#CA8A04", light: "#EAB308", name: "Sarı" },
         // Tier 5+ (51+): Altın
         { base: "#B45309", light: "#F59E0B", name: "Altın" }
