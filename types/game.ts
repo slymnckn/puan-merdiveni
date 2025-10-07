@@ -112,4 +112,5 @@ export type GameState = {
   advertisements: Advertisement[]
   currentAdvertisement: Advertisement | null
   showAdvertisementModal: boolean
+  showSettingsPopup: boolean
 }

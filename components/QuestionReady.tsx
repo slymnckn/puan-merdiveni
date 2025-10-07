@@ -10,9 +10,10 @@ interface QuestionReadyProps {
   onShowQuestion: () => void
   currentTurn: "A" | "B"
   publisherLogo?: string | null
+  onOpenSettings?: () => void
 }
 
-export default function QuestionReady({ gameState, onShowQuestion, currentTurn, publisherLogo }: QuestionReadyProps) {
+export default function QuestionReady({ gameState, onShowQuestion, currentTurn, publisherLogo, onOpenSettings }: QuestionReadyProps) {
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden">
       <div
@@ -50,6 +51,16 @@ export default function QuestionReady({ gameState, onShowQuestion, currentTurn, 
               </div>
             </div>
             <AudioControls orientation="vertical" className="mt-1" />
+            {onOpenSettings && (
+              <button
+                onClick={onOpenSettings}
+                className="inline-flex items-center justify-center rounded-full bg-transparent p-2 text-white transition-transform hover:scale-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                aria-label="Ayarlar"
+                title="Ayarlar"
+              >
+                <img src={getAssetPath("/assets/settings.png")} alt="Ayarlar" className="w-[52px] h-[52px] drop-shadow-md" />
+              </button>
+            )}
           </div>
         </div>
 

@@ -12,6 +12,7 @@ import SurpriseEvent from "@/components/SurpriseEvent"
 import GameResults from "@/components/GameResults"
 import AudioControls from "@/components/AudioControls"
 import PublisherLogoBadge from "@/components/PublisherLogoBadge"
+import SettingsPopup from "@/components/SettingsPopup"
 import { getAssetPath } from "@/lib/asset-path"
 import { apiService } from "@/lib/api-service"
 import { 
@@ -101,6 +102,7 @@ export default function GameApp() {
     advertisements: [],
     currentAdvertisement: null,
     showAdvertisementModal: false,
+    showSettingsPopup: false,
   })
 
   const [lastCorrectTeam, setLastCorrectTeam] = useState<"A" | "B">("A")
@@ -649,12 +651,21 @@ export default function GameApp() {
 
     case "question-ready":
       return (
-        <QuestionReady
-          gameState={gameState}
-          onShowQuestion={handleShowQuestion}
-          currentTurn={gameState.currentTurn}
-          publisherLogo={gameState.publisherLogo}
-        />
+        <>
+          <QuestionReady
+            gameState={gameState}
+            onShowQuestion={handleShowQuestion}
+            currentTurn={gameState.currentTurn}
+            publisherLogo={gameState.publisherLogo}
+            onOpenSettings={() => setGameState(prev => ({ ...prev, showSettingsPopup: true }))}
+          />
+          {gameState.showSettingsPopup && (
+            <SettingsPopup
+              onContinue={() => setGameState(prev => ({ ...prev, showSettingsPopup: false }))}
+              onReturnToMenu={() => setGameState(prev => ({ ...prev, currentScreen: "main-menu", showSettingsPopup: false }))}
+            />
+          )}
+        </>
       )
 
     case "ladder-progress":
@@ -665,14 +676,23 @@ export default function GameApp() {
         currentQuestion: gameState.currentQuestion 
       })
       return (
-        <LadderProgress
-          key={`ladder-${gameState.currentQuestion}`} // Her soru için yeni component instance
-          gameState={gameState}
-          onContinue={handleContinueFromLadder}
-          stepsGained={stepsGained}
-          correctTeam={stepsGained > 0 ? lastCorrectTeam : null}
-          publisherLogo={gameState.publisherLogo}
-        />
+        <>
+          <LadderProgress
+            key={`ladder-${gameState.currentQuestion}`} // Her soru için yeni component instance
+            gameState={gameState}
+            onContinue={handleContinueFromLadder}
+            stepsGained={stepsGained}
+            correctTeam={stepsGained > 0 ? lastCorrectTeam : null}
+            publisherLogo={gameState.publisherLogo}
+            onOpenSettings={() => setGameState(prev => ({ ...prev, showSettingsPopup: true }))}
+          />
+          {gameState.showSettingsPopup && (
+            <SettingsPopup
+              onContinue={() => setGameState(prev => ({ ...prev, showSettingsPopup: false }))}
+              onReturnToMenu={() => setGameState(prev => ({ ...prev, currentScreen: "main-menu", showSettingsPopup: false }))}
+            />
+          )}
+        </>
       )
 
     case "surprise-event":
@@ -739,6 +759,14 @@ export default function GameApp() {
                   </div>
                 </div>
                 <AudioControls orientation="vertical" className="mt-1" />
+                <button
+                  onClick={() => setGameState(prev => ({ ...prev, showSettingsPopup: true }))}
+                  className="inline-flex items-center justify-center rounded-full bg-transparent p-2 text-white transition-transform hover:scale-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                  aria-label="Ayarlar"
+                  title="Ayarlar"
+                >
+                  <img src={getAssetPath("/assets/settings.png")} alt="Ayarlar" className="w-[52px] h-[52px] drop-shadow-md" />
+                </button>
               </div>
             </div>
 
@@ -1130,6 +1158,14 @@ export default function GameApp() {
               </div>
             )}
           </div>
+          
+          {/* Settings Popup */}
+          {gameState.showSettingsPopup && (
+            <SettingsPopup
+              onContinue={() => setGameState(prev => ({ ...prev, showSettingsPopup: false }))}
+              onReturnToMenu={() => setGameState(prev => ({ ...prev, currentScreen: "main-menu", showSettingsPopup: false }))}
+            />
+          )}
         </div>
       )
 

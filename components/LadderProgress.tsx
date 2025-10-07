@@ -13,9 +13,10 @@ interface LadderProgressProps {
   stepsGained: number
   correctTeam: "A" | "B" | null
   publisherLogo?: string | null
+  onOpenSettings?: () => void
 }
 
-export default function LadderProgress({ gameState, onContinue, stepsGained, correctTeam, publisherLogo }: LadderProgressProps) {
+export default function LadderProgress({ gameState, onContinue, stepsGained, correctTeam, publisherLogo, onOpenSettings }: LadderProgressProps) {
   const [showAnimation, setShowAnimation] = useState(false)
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]) // Timeout'ları takip et
   const { playSfx } = useAudio()
@@ -418,6 +419,16 @@ export default function LadderProgress({ gameState, onContinue, stepsGained, cor
       {/* Audio Controls */}
       <div className="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
         <AudioControls />
+        {onOpenSettings && (
+          <button
+            onClick={onOpenSettings}
+            className="inline-flex items-center justify-center rounded-full bg-transparent p-2 text-white transition-transform hover:scale-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+            aria-label="Ayarlar"
+            title="Ayarlar"
+          >
+            <img src={getAssetPath("/assets/settings.png")} alt="Ayarlar" className="w-[52px] h-[52px] drop-shadow-md" />
+          </button>
+        )}
       </div>
 
       {/* Ladder Steps - Team A (Left side) - Her takımın kendi basamakları */}
