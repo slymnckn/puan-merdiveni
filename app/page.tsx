@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react"
 import type { GameState, GameScreen, Team, GameSettingsType, SurpriseChoice } from "@/types/game"
-import type { Advertisement, GameQuestion } from "@/types/api"
+import type { GameQuestion } from "@/types/api"
 import MainMenu from "@/components/MainMenu"
 import TeamSelection from "@/components/TeamSelection"
 import GameSettingsComponent from "@/components/GameSettings"
@@ -10,7 +10,6 @@ import QuestionReady from "@/components/QuestionReady"
 import LadderProgress from "@/components/LadderProgress"
 import SurpriseEvent from "@/components/SurpriseEvent"
 import GameResults from "@/components/GameResults"
-import AdvertisementScreen from "@/components/AdvertisementScreen"
 import AudioControls from "@/components/AudioControls"
 import PublisherLogoBadge from "@/components/PublisherLogoBadge"
 import { getAssetPath } from "@/lib/asset-path"
@@ -69,8 +68,6 @@ const extractGameCode = (input: string | null | undefined): string | undefined =
 
 export default function GameApp() {
   const { playMusic, stopMusic, playSfx } = useAudio()
-  const [advertisements, setAdvertisements] = useState<Advertisement[]>([])
-  const [currentAdIndex] = useState(0)
   const [gameQuestions, setGameQuestions] = useState<GameQuestion[]>([])
   const [gameState, setGameState] = useState<GameState>({
     currentScreen: "main-menu",
@@ -103,7 +100,7 @@ export default function GameApp() {
     questions: [],
     advertisements: [],
     currentAdvertisement: null,
-    advertisementTimeLeft: 0,
+    showAdvertisementModal: false,
   })
 
   const [lastCorrectTeam, setLastCorrectTeam] = useState<"A" | "B">("A")
@@ -220,8 +217,7 @@ export default function GameApp() {
 
       const resolvedGameCode = extractGameCode(initialGameCodeRef.current) ?? "default"
 
-      setAdvertisements(ads)
-      setGameQuestions(resolvedQuestions)
+  setGameQuestions(resolvedQuestions)
 
       const initialPublisherQuestion = resolvedQuestions.find((question) => {
         const hasPublisher = typeof question.publisher_id === "number" && question.publisher_id > 0
@@ -233,10 +229,9 @@ export default function GameApp() {
 
       setGameState((prev) => ({
         ...prev,
-        currentScreen: ads.length > 0 ? "advertisement" : "main-menu",
         advertisements: ads,
         currentAdvertisement: ads[0] ?? null,
-        advertisementTimeLeft: ads[0]?.duration_seconds ?? 0,
+        showAdvertisementModal: (ads[0] ?? null) !== null,
         settings: {
           ...prev.settings,
           gameCode: resolvedGameCode
@@ -294,12 +289,16 @@ export default function GameApp() {
       ...prev, 
       currentScreen: "main-menu",
       currentAdvertisement: null,
-      advertisementTimeLeft: 0
+      showAdvertisementModal: false
     }))
   }
 
   const handleStartGame = () => {
-    navigateToScreen("team-selection")
+    setGameState((prev) => ({
+      ...prev,
+      currentScreen: "team-selection",
+      showAdvertisementModal: false,
+    }))
   }
 
   const handleTeamsUpdate = (updatedTeams: Team[]) => {
@@ -360,14 +359,6 @@ export default function GameApp() {
         teamCounts: { A: 0, B: 0 }
       }
     }))
-  }
-
-  const handleAdComplete = () => {
-    setGameState(prev => ({ ...prev, currentScreen: "main-menu" }))
-  }
-
-  const handleAdSkip = () => {
-    setGameState(prev => ({ ...prev, currentScreen: "main-menu" }))
   }
 
   const handleShowQuestion = () => {
@@ -601,10 +592,10 @@ export default function GameApp() {
         lastTriggeredQuestion: null,
         teamCounts: { A: 0, B: 0 }
       },
-      questions: [],
-      advertisements: prev.advertisements,
-      currentAdvertisement: prev.currentAdvertisement,
-      advertisementTimeLeft: prev.advertisementTimeLeft,
+    questions: [],
+    advertisements: prev.advertisements,
+    currentAdvertisement: prev.currentAdvertisement,
+      showAdvertisementModal: false,
     }))
     setLastCorrectTeam("A")
     setStepsGained(3)
@@ -625,20 +616,16 @@ export default function GameApp() {
 
   // Render current screen
   switch (gameState.currentScreen) {
-    case "advertisement":
-      if (advertisements.length > 0 && currentAdIndex < advertisements.length) {
-        return (
-          <AdvertisementScreen
-            advertisement={advertisements[currentAdIndex]}
-            onAdComplete={handleAdComplete}
-            onAdSkip={handleAdSkip}
-          />
-        )
-      }
-      return <MainMenu onStartGame={handleStartGame} publisherLogo={gameState.publisherLogo} />
-      
     case "main-menu":
-      return <MainMenu onStartGame={handleStartGame} publisherLogo={gameState.publisherLogo} />
+      return (
+        <MainMenu
+          onStartGame={handleStartGame}
+          publisherLogo={gameState.publisherLogo}
+          advertisement={gameState.currentAdvertisement}
+          showAdvertisement={gameState.showAdvertisementModal && !!gameState.currentAdvertisement}
+          onCloseAdvertisement={handleAdvertisementClose}
+        />
+      )
 
     case "team-selection":
       return (
@@ -1147,19 +1134,15 @@ export default function GameApp() {
       )
 
     }
-    case "advertisement":
-      if (gameState.currentAdvertisement) {
-        return (
-          <AdvertisementScreen 
-            advertisement={gameState.currentAdvertisement}
-            onAdComplete={handleAdvertisementClose}
-            onAdSkip={handleAdvertisementClose}
-          />
-        )
-      }
-      return <MainMenu onStartGame={handleStartGame} publisherLogo={gameState.publisherLogo} />
-
     default:
-      return <MainMenu onStartGame={handleStartGame} publisherLogo={gameState.publisherLogo} />
+      return (
+        <MainMenu
+          onStartGame={handleStartGame}
+          publisherLogo={gameState.publisherLogo}
+          advertisement={gameState.currentAdvertisement}
+          showAdvertisement={gameState.showAdvertisementModal && !!gameState.currentAdvertisement}
+          onCloseAdvertisement={handleAdvertisementClose}
+        />
+      )
   }
 }

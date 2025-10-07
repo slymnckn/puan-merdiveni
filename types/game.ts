@@ -1,5 +1,4 @@
 export type GameScreen =
-  | "advertisement"
   | "main-menu"
   | "team-selection"
   | "game-settings"
@@ -76,9 +75,15 @@ export type SurpriseTracker = {
 export type Advertisement = {
   id: number
   name: string
+  type?: string | null
+  file_path?: string | null
   file_url: string
-  link_url: string
+  link_url?: string | null
   duration_seconds: number
+  grade?: string | null
+  subject?: string | null
+  start_date?: string | null
+  end_date?: string | null
 }
 
 export type GameState = {
@@ -106,5 +111,5 @@ export type GameState = {
   questions: Question[]
   advertisements: Advertisement[]
   currentAdvertisement: Advertisement | null
-  advertisementTimeLeft: number
+  showAdvertisementModal: boolean
 }

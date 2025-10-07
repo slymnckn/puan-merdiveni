@@ -284,9 +284,101 @@ class ApiService {
     try {
       const url = `${this.config.baseUrl}/unity/advertisements`
       const response = await this.fetchWithRetry(url)
-      const ads: Advertisement[] = await response.json()
+      const payload = await response.json()
+      const storageBase = this.config.baseUrl.replace(/\/api$/i, "")
 
-      return ads.filter(ad => ad.file_url && ad.duration_seconds > 0)
+      const resolveAssetUrl = (candidate?: unknown, fallback?: unknown): string | null => {
+        const rawValue = [candidate, fallback].find(
+          (value): value is string => typeof value === "string" && value.trim().length > 0
+        )
+
+        if (!rawValue) {
+          return null
+        }
+
+        const trimmed = rawValue.trim()
+
+        if (isAbsoluteUrl(trimmed)) {
+          return trimmed
+        }
+
+        if (!storageBase) {
+          return `/${stripLeadingSlash(trimmed)}`
+        }
+
+        if (trimmed.startsWith("storage/")) {
+          return `${storageBase}/${stripLeadingSlash(trimmed)}`
+        }
+
+        if (trimmed.startsWith("advertisements/") || trimmed.startsWith("publisher-logos/")) {
+          return `${storageBase}/storage/${stripLeadingSlash(trimmed)}`
+        }
+
+        return `${storageBase}/${stripLeadingSlash(trimmed)}`
+      }
+
+      const resolveLinkUrl = (raw: unknown): string | null => {
+        if (!raw || typeof raw !== "object") {
+          return null
+        }
+
+        const candidate = [
+          (raw as Record<string, unknown>).link_url,
+          (raw as Record<string, unknown>).target_url,
+          (raw as Record<string, unknown>).url
+        ].find((value): value is string => typeof value === "string" && value.trim().length > 0)
+
+        if (!candidate) {
+          return null
+        }
+
+        const trimmed = candidate.trim()
+
+        if (isAbsoluteUrl(trimmed)) {
+          return trimmed
+        }
+
+        if (!storageBase) {
+          return `/${stripLeadingSlash(trimmed)}`
+        }
+
+        return `${storageBase}/${stripLeadingSlash(trimmed)}`
+      }
+
+      const ads: Advertisement[] = []
+
+      if (Array.isArray(payload)) {
+        for (const raw of payload) {
+          if (!raw || typeof raw !== "object") {
+            continue
+          }
+
+          const rawRecord = raw as Record<string, unknown>
+          const durationValue = Number(rawRecord.duration_seconds ?? rawRecord.duration ?? 0)
+          const durationSeconds = Number.isFinite(durationValue) ? Math.max(Math.floor(durationValue), 0) : 0
+          const fileUrl = resolveAssetUrl(rawRecord.file_url, rawRecord.file_path)
+
+          if (!fileUrl) {
+            continue
+          }
+
+          ads.push({
+            id: Number(rawRecord.id) || Date.now(),
+            name: typeof rawRecord.name === "string" && rawRecord.name.trim().length > 0 ? rawRecord.name.trim() : "Reklam",
+            type: typeof rawRecord.type === "string" ? rawRecord.type : null,
+            file_path: typeof rawRecord.file_path === "string" ? rawRecord.file_path : null,
+            file_url: fileUrl,
+            link_url: resolveLinkUrl(rawRecord),
+            duration_seconds: durationSeconds,
+            grade: typeof rawRecord.grade === "string" ? rawRecord.grade : null,
+            subject: typeof rawRecord.subject === "string" ? rawRecord.subject : null,
+            start_date: typeof rawRecord.start_date === "string" ? rawRecord.start_date : null,
+            end_date: typeof rawRecord.end_date === "string" ? rawRecord.end_date : null,
+          })
+        }
+      }
+
+      return ads
     } catch (error) {
       console.error('Failed to fetch advertisements:', error)
       return []

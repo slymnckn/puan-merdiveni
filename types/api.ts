@@ -16,9 +16,15 @@ export interface ApiQuestion {
 export interface Advertisement {
   id: number
   name: string
+  type?: string | null
+  file_path?: string | null
   file_url: string
-  link_url: string
+  link_url?: string | null
   duration_seconds: number
+  grade?: string | null
+  subject?: string | null
+  start_date?: string | null
+  end_date?: string | null
 }
 
 export interface PublisherLogo {
