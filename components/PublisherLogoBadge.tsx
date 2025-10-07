@@ -36,29 +36,29 @@ export default function PublisherLogoBadge({
 }: PublisherLogoBadgeProps) {
   const resolvedLogo = logoUrl && logoUrl.trim().length > 0 ? logoUrl : getAssetPath(fallbackLogo)
   const sizeStyles = SIZE_MAP[size]
+  const badgeBackground = getAssetPath("/assets/logo-banner.png")
 
   return (
     <div
       className={cn(
-        "flex items-center justify-center bg-white/90 border border-white/60 shadow-[0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur",
+        "relative flex items-center justify-center shadow-[0_6px_20px_rgba(0,0,0,0.25)]",
         sizeStyles.container,
         className
       )}
       style={{ 
         width: sizeStyles.boxSize, 
         height: sizeStyles.boxSize, 
-        borderRadius: "12px" 
+        borderRadius: "9999px",
+        backgroundImage: `url(${badgeBackground})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center"
       }}
     >
-      <div className={cn("bg-white/80 p-1 border border-white/50", size === "sm" ? "p-1" : "p-1.5")}
-        style={{ boxShadow: "inset 0 1px 4px rgba(0,0,0,0.08)", borderRadius: "8px" }}
-      >
-        <img
-          src={resolvedLogo}
-          alt="Publisher logo"
-          className={cn("object-contain", sizeStyles.image)}
-        />
-      </div>
+      <img
+        src={resolvedLogo}
+        alt="Publisher logo"
+        className={cn("object-contain", sizeStyles.image)}
+      />
     </div>
   )
 }

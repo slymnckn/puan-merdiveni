@@ -253,6 +253,34 @@ export default function GameApp() {
     })
   }, [])
 
+  useEffect(() => {
+    if (typeof document === "undefined") return
+
+    const trimmedLogo = gameState.publisherLogo?.trim()
+    const fallbackLogo = getAssetPath("/assets/logo-banner.png")
+    const faviconSource = trimmedLogo && trimmedLogo.length > 0 ? getAssetPath(trimmedLogo) : fallbackLogo
+
+    if (!faviconSource) return
+
+    const cacheBustedHref = `${faviconSource}${faviconSource.includes("?") ? "&" : "?"}t=${Date.now()}`
+
+    const updateLink = (rel: string) => {
+      const selector = `link[rel="${rel}"]`
+      let link = document.querySelector<HTMLLinkElement>(selector)
+
+      if (!link) {
+        link = document.createElement("link")
+        link.rel = rel
+        document.head.appendChild(link)
+      }
+
+      link.type = "image/png"
+      link.href = cacheBustedHref
+    }
+
+    ["icon", "shortcut icon", "apple-touch-icon"].forEach(updateLink)
+  }, [gameState.publisherLogo])
+
   // Log when gameQuestions changes for debugging
   useEffect(() => {
     console.log('gameQuestions updated:', gameQuestions.length, 'questions available')

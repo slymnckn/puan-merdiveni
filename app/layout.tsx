@@ -11,9 +11,9 @@ const baloo2 = Baloo_2({
 })
 
 export const metadata: Metadata = {
-  title: 'Quiz Game',
+  title: 'Puan Merdiveni - Eğlenceli Quiz Oyunu',
   description: 'Eğlenceli Quiz Oyunu',
-  generator: 'v0.app',
+  generator: 'powered by Broos Media',
 }
 
 export default function RootLayout({
