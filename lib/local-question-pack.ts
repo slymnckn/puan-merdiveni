@@ -24,7 +24,11 @@ const IMAGE_PROPERTY_CANDIDATES = [
   "imageUrl",
   "image_url",
   "imagePath",
-  "image_path"
+  "image_path",
+  "image",
+  "img",
+  "picture",
+  "photo"
 ]
 
 const QUESTION_ARRAY_CANDIDATE_KEYS = [
@@ -65,7 +69,17 @@ const resolveLocalPath = (path: string, baseHref: string): string => {
   }
 
   try {
-    const normalized = path.startsWith('/') ? path : `./${path}`
+    // Eğer path sadece dosya adıysa (dizin içermiyorsa), questions/images/ ekle
+    const pathSegments = path.split('/').filter(Boolean)
+    let normalized = path.startsWith('/') ? path : `./${path}`
+    
+    // Eğer path sadece dosya adı ise (dizin yolu içermiyorsa)
+    if (pathSegments.length === 1 && !path.includes('/')) {
+      normalized = `./questions/images/${path}`
+    } else if (!path.startsWith('./') && !path.startsWith('/')) {
+      normalized = `./${path}`
+    }
+    
     const url = new URL(normalized, baseHref)
     return url.pathname + url.search
   } catch {
@@ -149,9 +163,14 @@ const determineQuestionType = (raw: RawLocalQuestion, answers: string[]): "multi
     if (normalized === "true_false" || normalized === "true-false" || normalized === "dogru_yanlis") {
       return "true_false"
     }
-    if (normalized === "classic" || normalized === "klasik") {
+    if (normalized === "classic" || normalized === "klasik" || normalized === "qa") {
       return "classic"
     }
+  }
+
+  // Eğer sadece 1 cevap varsa, bu klasik (QA) soru tipidir
+  if (answers.length === 1) {
+    return "classic"
   }
 
   if (answers.length === 2) {
@@ -276,12 +295,12 @@ const convertToGameQuestion = (
     const options = buildOptions(answers)
     question.options = options
   } else {
+    // Classic soru tipi için options eklemiyoruz
+    // Sadece cevabı A seçeneğine koyuyoruz (backend'den gelen formata uygun)
     const classicAnswer = answers[0] ?? ""
     question.options = {
       A: classicAnswer,
-      B: answers[1] ?? "",
-      C: answers[2] ?? "",
-      D: answers[3] ?? ""
+      B: ""
     }
   }
 
