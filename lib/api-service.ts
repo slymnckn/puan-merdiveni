@@ -475,7 +475,8 @@ class ApiService {
 
       const explicitType = this.toString(questionRecord.type ?? questionRecord.question_type).toLowerCase()
 
-      if (explicitType === 'classic') {
+      if (explicitType === 'qa' || explicitType === 'classic') {
+        // QA ve Classic tipler aynı şekilde işlenir - Cevabı Gör butonu ile
         questionType = 'classic'
         baseOptions.A = normalizedAnswers[0]?.text ?? ''
         correctAnswer = 'A'

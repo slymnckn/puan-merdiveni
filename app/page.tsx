@@ -758,15 +758,12 @@ export default function GameApp() {
                     </span>
                   </div>
                 </div>
-                <AudioControls orientation="vertical" className="mt-1" />
-                <button
-                  onClick={() => setGameState(prev => ({ ...prev, showSettingsPopup: true }))}
-                  className="inline-flex items-center justify-center rounded-full bg-transparent p-2 text-white transition-transform hover:scale-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
-                  aria-label="Ayarlar"
-                  title="Ayarlar"
-                >
-                  <img src={getAssetPath("/assets/settings.png")} alt="Ayarlar" className="w-[52px] h-[52px] drop-shadow-md" />
-                </button>
+                <AudioControls 
+                  orientation="grid" 
+                  className="mt-1"
+                  showSettings={true}
+                  onSettingsClick={() => setGameState(prev => ({ ...prev, showSettingsPopup: true }))}
+                />
               </div>
             </div>
 

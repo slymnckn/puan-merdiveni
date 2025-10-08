@@ -33,7 +33,7 @@ export default function QuestionReady({ gameState, onShowQuestion, currentTurn, 
           <div className="relative flex flex-col items-start gap-3">
             <div className="relative">
               <img src={getAssetPath("/assets/soru-sayac-banneri.png")} alt="Question Banner" className="h-16 w-auto" />
-              <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '0px' }}>
+              <div className="absolute inset-0 flex items-center justify-center" style={{ marginTop: '-15px' }}>
                 <span className="text-amber-900 font-bold text-lg drop-shadow-sm">
                   Soru {gameState.currentQuestion}/{gameState.settings.questionCount}
                 </span>
@@ -50,17 +50,12 @@ export default function QuestionReady({ gameState, onShowQuestion, currentTurn, 
                 <span className="text-amber-900 font-bold text-xl drop-shadow-sm">---</span>
               </div>
             </div>
-            <AudioControls orientation="vertical" className="mt-1" />
-            {onOpenSettings && (
-              <button
-                onClick={onOpenSettings}
-                className="inline-flex items-center justify-center rounded-full bg-transparent p-2 text-white transition-transform hover:scale-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
-                aria-label="Ayarlar"
-                title="Ayarlar"
-              >
-                <img src={getAssetPath("/assets/settings.png")} alt="Ayarlar" className="w-[52px] h-[52px] drop-shadow-md" />
-              </button>
-            )}
+            <AudioControls 
+              orientation="grid" 
+              className="mt-1" 
+              showSettings={!!onOpenSettings}
+              onSettingsClick={onOpenSettings}
+            />
           </div>
         </div>
 
