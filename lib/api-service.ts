@@ -55,6 +55,34 @@ class ApiService {
     return `${this.config.baseUrl}/${stripLeadingSlash(fallbackPath.replace('{code}', trimmed))}`
   }
 
+  /**
+   * API'den gelen görsel URL'lerini normalize eder
+   * Gereksiz "https://" tekrarlarını ve diğer sorunları düzeltir
+   */
+  private normalizeImageUrl(imageUrl?: string | null): string | undefined {
+    if (!imageUrl || typeof imageUrl !== 'string') {
+      return undefined
+    }
+
+    const trimmed = imageUrl.trim()
+    if (!trimmed) {
+      return undefined
+    }
+
+    // Gereksiz "https://" tekrarını düzelt
+    // Örnek: "https://etkinlik.app/storage/https://etkinlik.app/storage/questions/external_SPyOThksKz.jpg"
+    // Doğru: "https://etkinlik.app/storage/questions/external_SPyOThksKz.jpg"
+    const duplicateProtocolRegex = /^(https?:\/\/[^\/]+\/[^\/]*)(https?:\/\/)/i
+    let normalized = trimmed.replace(duplicateProtocolRegex, '$1')
+
+    // Eğer hala geçersiz URL ise, sadece son kısmı al
+    if (normalized.includes('https://') && normalized.lastIndexOf('https://') > 0) {
+      normalized = normalized.substring(normalized.lastIndexOf('https://'))
+    }
+
+    return normalized
+  }
+
   private async fetchWithRetry(url: string, options: RequestInit = {}): Promise<Response> {
     let lastError: Error | null = null
     
@@ -423,6 +451,12 @@ class ApiService {
   }
 
   private convertQuestionsToGameFormat(apiQuestions: ApiQuestion[]): GameQuestion[] {
+    const storageBase = this.config.baseUrl.replace(/\/api$/i, "")
+    
+
+
+
+
     return apiQuestions.map((question, index) => {
   const questionRecord = this.ensureRecord(question)
   const answerList = this.extractAnswerList(questionRecord)
@@ -519,26 +553,29 @@ class ApiService {
         }
       }
 
-      const imageUrl = this.toString(
+      const rawImageUrl = this.toString(
         questionRecord.image_url ??
         questionRecord.image ??
         questionRecord.imagePath ??
         questionRecord.image_path ??
         ''
-      ) || undefined
+      )
+      const imageUrl = this.normalizeImageUrl(rawImageUrl)
 
       const rawAvailableLogos = questionRecord.available_logos ?? questionRecord.availableLogos
-      let publisherLogoUrl = this.toString(
-        questionRecord.logo_url ??
-        questionRecord.publisher_logo_url ??
-        this.ensureRecord(questionRecord.publisher).logo_url ??
-        ''
+      let publisherLogoUrl = this.normalizeImageUrl(
+        this.toString(
+          questionRecord.logo_url ??
+          questionRecord.publisher_logo_url ??
+          this.ensureRecord(questionRecord.publisher).logo_url ??
+          ''
+        )
       )
 
       if (!publisherLogoUrl && Array.isArray(rawAvailableLogos)) {
         const firstLogo = rawAvailableLogos.find((entry) => typeof entry === 'string' && entry.trim().length > 0)
         if (typeof firstLogo === 'string') {
-          publisherLogoUrl = this.toString(firstLogo)
+          publisherLogoUrl = this.normalizeImageUrl(firstLogo)
         }
       }
 
@@ -559,7 +596,7 @@ class ApiService {
         correct_answer: correctAnswer,
         publisher_id: publisherId,
         image_url: imageUrl,
-        publisher_logo_url: publisherLogoUrl || undefined
+        publisher_logo_url: publisherLogoUrl
       }
     })
   }
